@@ -13,8 +13,8 @@
  * sub-100 m population enters the model the only way it can, as ring mass and
  * ring optical depth (see `saturn.ts`).
  *
- * Listed below are the 54 moons with orbits determined well enough to state:
- * the 23 regular and inner moons, and the 31 named irregulars. Saturn's
+ * Listed below are the 53 moons with orbits determined well enough to state:
+ * the 23 regular and inner moons, and the 30 named irregulars. Saturn's
  * confirmed count now exceeds 270, the rest being 2019-and-later discoveries in
  * the Norse group, several kilometres across and twenty million kilometres out.
  * They are omitted because their elements are not something this file should be
@@ -295,8 +295,8 @@ export const moonById = (id: string): Moon | undefined => MOONS_BY_ID.get(id);
  * The cut is at 1e-3 km3/s2, which keeps Saturn's seventeen measured-GM moons
  * and drops the rest. It exists because the trajectory predictor runs the same
  * force law hundreds of thousands of times per request, and pair count goes as
- * the square: 54 moons is 1 485 pairs, 17 is 153. Nearly a tenfold saving for a
- * change in the module's acceleration below one part in a million.
+ * the square: 53 moons plus Saturn is 1 431 pairs, 17 is 153. Nearly a tenfold
+ * saving for a change in the module's acceleration below one part in a million.
  *
  * The dropped moons are still *present* — still integrated, still visitable,
  * still able to be crashed into. They simply do not pull on anything.

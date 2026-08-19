@@ -38,7 +38,7 @@ import { vec3, type Vec3 } from './vec.js';
 /**
  * Accelerations for every body, from every other body.
  *
- * Flat `Float64Array`s, not `Vec3`s. The inner loop runs 1 485 pairs per
+ * Flat `Float64Array`s, not `Vec3`s. The inner loop runs 1 431 pairs per
  * evaluation, three evaluations per step, and up to a million steps per
  * prediction request; allocating three objects per body per pass would dominate
  * everything else in the file.

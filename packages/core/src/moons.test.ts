@@ -140,7 +140,7 @@ describe('synthetic phases', () => {
   });
 
   it('spread the moons around rather than clumping them', () => {
-    // Four quadrants, 54 moons: a hash that clumped would leave one empty.
+    // Four quadrants, 53 moons: a hash that clumped would leave one empty.
     const quadrants = [0, 0, 0, 0];
     for (const moon of MOONS) quadrants[Math.floor(moon.elements.meanLongitude / 90)]!++;
     for (const count of quadrants) expect(count).toBeGreaterThan(4);

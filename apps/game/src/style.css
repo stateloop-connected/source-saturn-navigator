@@ -1,0 +1,474 @@
+/*
+ * The interface, which is deliberately a frame around the scene rather than a
+ * layer over it.
+ *
+ * Two columns pinned to the edges, nothing in the middle. Saturn and the
+ * trajectory occupy the centre of the screen at every zoom, and a panel there —
+ * even a translucent one — would sit exactly where the player is looking. The
+ * columns scroll independently and stop short of the bottom, so the scale bar
+ * in the lower-left corner of the canvas is never covered.
+ */
+
+:root {
+  --space: #05070d;
+  --panel: rgba(10, 14, 22, 0.9);
+  --border: rgba(120, 155, 195, 0.22);
+  --text: #d6e4f4;
+  --dim: #8b9cb0;
+  --accent: #66e0ff;
+  --warn: #ffbe5c;
+  --danger: #ff5a52;
+  --radius: 7px;
+
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--space);
+  color: var(--text);
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  /* The frame does not intercept the pointer; only the controls in it do. */
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: 268px 1fr 304px;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------ top bar */
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  margin-right: auto;
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.topbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-warp .readout-value {
+  min-width: 74px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ columns */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Leave the canvas scale bar visible in the corner. */
+  padding-bottom: 34px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.column-left {
+  grid-column: 1;
+}
+
+.column-right {
+  grid-column: 3;
+}
+
+/* ------------------------------------------------------------------- panels */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  flex: none;
+}
+
+.panel-title {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.panel-title::-webkit-details-marker {
+  display: none;
+}
+
+.panel-title::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 7px;
+  transition: transform 0.15s ease;
+}
+
+.panel[open] > .panel-title::before {
+  transform: rotate(90deg);
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 4px 12px 12px;
+}
+
+.panel-help {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.panel-help.is-warn {
+  color: var(--warn);
+}
+
+.panel-help.is-danger {
+  color: var(--danger);
+}
+
+.rule {
+  height: 1px;
+  margin: 3px 0;
+  border: 0;
+  background: var(--border);
+}
+
+/* ----------------------------------------------------------------- readouts */
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.readout-label {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.readout-value {
+  /*
+   * Tabular figures, so a value that ticks does not shuffle the digits beside
+   * it. On a readout updating ten times a second the difference between
+   * proportional and tabular numerals is the difference between reading a
+   * number and watching one jitter.
+   */
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.readout-value.is-warn {
+  color: var(--warn);
+}
+
+.readout-value.is-danger {
+  color: var(--danger);
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+.button {
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.button.is-active {
+  color: #04121a;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.button-primary {
+  color: #04121a;
+  background: rgba(102, 224, 255, 0.85);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.button-primary:hover {
+  background: var(--accent);
+}
+
+.button-icon {
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.button-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.button-row .button {
+  flex: 1;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.button-mode {
+  padding: 5px 6px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ inputs */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle input {
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.slider-label {
+  color: var(--dim);
+}
+
+.slider-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.slider input {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+
+.select {
+  flex: 1;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-cursor {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-cursor:not(:empty) {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------------- moon list */
+
+.moon-list {
+  max-height: 52vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.moon-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.moon-group-title {
+  width: 100%;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 1px;
+}
+
+.moon-button {
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.moon-button:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.moon-button.is-active {
+  color: #04121a;
+  background: var(--accent);
+  font-weight: 600;
+}
+
+.prediction-results {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+/* -------------------------------------------------------------- crash layer */
+
+.crash-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 6, 12, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.crash-layer.is-hidden {
+  display: none;
+}
+
+.crash-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 380px;
+  padding: 22px 26px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+}
+
+.crash-title {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--danger);
+}
+
+.crash-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------- narrow views */
+
+@media (max-width: 1100px) {
+  #ui {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .column-left,
+  .column-right {
+    grid-column: 1;
+    max-height: 34vh;
+  }
+}
