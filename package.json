@@ -1,0 +1,36 @@
+{
+  "name": "saturn-navigator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A navigation game in a Newtonian model of the Saturn system: fly a module through the gravity field of Saturn and its moons.",
+  "license": "MIT",
+  "author": "Richard Lipka",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richardLipka/saturn_navigator.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "//scripts": "The trailing `--` matters: without it npm appends extra arguments bare, so `npm run dev -- --port 5180` reaches the inner script as npm config flags and the port is silently ignored.",
+    "//core": "@saturn/core is consumed through its built output, the same way a separate repository would consume it, so everything here builds it first. Core's own `prepare` covers a fresh clone; these cover an edit.",
+    "build:core": "npm run build --workspace @saturn/core",
+    "dev": "npm run build:core && npm run dev --workspace @saturn/game --",
+    "build": "npm run build:core && npm run build --workspace @saturn/game --",
+    "preview": "npm run preview --workspace @saturn/game --",
+    "test": "npm run build:core && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run build:core && npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^7.1.5",
+    "vitest": "^3.1.0"
+  }
+}

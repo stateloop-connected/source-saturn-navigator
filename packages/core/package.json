@@ -1,0 +1,48 @@
+{
+  "name": "@saturn/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A Newtonian model of the Saturn system — moon catalogue, symplectic n-body integrator, oblate-primary gravity, trajectory prediction. No DOM, no framework, no runtime dependencies.",
+  "license": "MIT",
+  "author": "Richard Lipka",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richardLipka/saturn_navigator.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "astronomy",
+    "saturn",
+    "n-body",
+    "orbital-mechanics",
+    "symplectic-integrator",
+    "ephemeris"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "//": "Compiled output, per module rather than bundled: every module keeps its own subpath so a consumer can take the integrator without the moon catalogue, or the catalogue without the integrator.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit"
+  }
+}

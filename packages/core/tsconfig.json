@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /*
+     * No DOM.
+     *
+     * This package is meant to be consumed by things that are not the game — a
+     * mission-planning script, a notebook, a headless accuracy check — so it
+     * must not reach for `document`, `window` or `localStorage`. Leaving DOM
+     * out of `lib` turns that from a rule someone has to remember into a
+     * compile error, which is the only kind of boundary that holds.
+     */
+    "lib": ["ES2022"],
+    "noEmit": true
+  },
+  "include": ["src"]
+}
