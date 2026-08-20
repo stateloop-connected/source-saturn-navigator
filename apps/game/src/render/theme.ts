@@ -76,6 +76,29 @@ export const THEME = {
   sun: '#ffe9a8',
 
   /**
+   * The sphere of influence the module is inside.
+   *
+   * Violet, because it is the one overlay that is neither a physical object nor
+   * a trajectory — it is a statement about which frame you are in, and it needs
+   * to be distinguishable at a glance from both the orbits (blue) and the
+   * predicted path (amber).
+   */
+  influence: {
+    edge: 'rgba(186, 148, 255, 0.72)',
+    fill: 'rgba(150, 110, 235, 0.05)',
+  },
+
+  node: {
+    marker: '#ffd166',
+    burning: '#ff8a3d',
+  },
+
+  mission: {
+    target: '#7ef2a8',
+    reached: '#5ef2d0',
+  },
+
+  /**
    * Ramp for the gravity-field overlay, weak to strong.
    *
    * Perceptually ordered and colour-blind safe — it is read as a magnitude, so

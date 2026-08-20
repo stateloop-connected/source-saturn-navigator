@@ -14,6 +14,9 @@ import type { FieldGrid } from '@saturn/core/field';
 import type { Prediction } from '@saturn/core/predict';
 import type { SaturnSystem } from '@saturn/core/system';
 import { splitDuration } from '@saturn/core/time';
+import { SATURN_INDEX } from '@saturn/core/system';
+import type { ManoeuvreNode } from '@saturn/core/manoeuvre';
+import { RENDEZVOUS_DISTANCE } from '@saturn/core/mission';
 import { normalize, vec3, type Vec3 } from '@saturn/core/vec';
 import type { Camera } from '../state/camera.js';
 import { THEME, fieldColour } from './theme.js';
@@ -364,5 +367,179 @@ export function drawScaleBar(ctx: CanvasRenderingContext2D, camera: Camera): voi
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
   ctx.fillText(label, x, y - 8);
+  ctx.restore();
+}
+
+/**
+ * The sphere of influence the module is currently inside.
+ *
+ * Drawn only for the body that actually governs the module, not for every moon
+ * that has one. Fifty-three overlapping circles would be a mess, and the
+ * question the overlay answers is singular: *whose* orbit am I on.
+ *
+ * A circle in the ring plane, not a sphere. The boundary is a sphere, but every
+ * trajectory that matters is close enough to the ring plane that the circle is
+ * the section a player is actually crossing.
+ */
+export function drawInfluenceSphere(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  system: SaturnSystem,
+  index: number,
+): void {
+  if (index === SATURN_INDEX) return;
+
+  const moon = system.bodies[index];
+  if (!moon) return;
+
+  const radius = system.influenceRadius(index);
+  if (!Number.isFinite(radius)) return;
+
+  const centre = system.saturnCentred(index);
+  const projected = camera.project(centre);
+  const radiusPx = radius * camera.scale;
+
+  // Too small to read, or so large that its arc is a straight line across the
+  // screen and says nothing.
+  if (radiusPx < 8 || radiusPx > camera.width * 8) return;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(
+    projected.x,
+    projected.y,
+    radiusPx,
+    radiusPx * Math.abs(camera.ringSquash),
+    0,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = THEME.influence.edge;
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([7, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = THEME.influence.fill;
+  ctx.fill();
+
+  ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillStyle = THEME.influence.edge;
+  ctx.textAlign = 'center';
+  ctx.fillText(moon.name, projected.x, projected.y - radiusPx * Math.abs(camera.ringSquash) - 8);
+  ctx.restore();
+}
+
+/**
+ * The mother ship, and the volume that counts as having arrived.
+ *
+ * The tolerance circle is drawn at whatever size it comes out — which at most
+ * zooms is well under a pixel, and that is the honest answer: a 500 km box
+ * around a point 2 million km from Saturn is a very small target, and the
+ * player should have to zoom in to hit it.
+ */
+export function drawMotherShip(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  position: Vec3,
+  arrived: boolean,
+): void {
+  const projected = camera.project(position);
+  if (!camera.onScreen(projected, 60)) return;
+
+  ctx.save();
+  ctx.translate(projected.x, projected.y);
+
+  const colour = arrived ? THEME.mission.reached : THEME.mission.target;
+
+  // A ringed diamond, so it never reads as one of the moons.
+  ctx.strokeStyle = colour;
+  ctx.fillStyle = colour;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(0, -7);
+  ctx.lineTo(7, 0);
+  ctx.lineTo(0, 7);
+  ctx.lineTo(-7, 0);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  const tolerancePx = RENDEZVOUS_DISTANCE * camera.scale;
+  if (tolerancePx > 3) {
+    ctx.beginPath();
+    ctx.arc(0, 0, tolerancePx, 0, Math.PI * 2);
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+/**
+ * The manoeuvre node: where the burn happens, and which way it points.
+ *
+ * Placed at the point on the *predicted* path nearest the node's time, rather
+ * than at a position worked out from two-body elements. The two differ by
+ * kilometres after a day, and the marker has to sit on the curve the player can
+ * see or it looks like it belongs to something else.
+ */
+export function drawNode(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  node: ManoeuvreNode,
+  prediction: Prediction | null,
+  simulationTime: number,
+  burning: boolean,
+): void {
+  if (!prediction || prediction.sampleCount === 0) return;
+
+  const offset = node.at - simulationTime;
+  if (offset < 0) return;
+
+  let best = 0;
+  let bestGap = Infinity;
+  for (let k = 0; k < prediction.sampleCount; k++) {
+    const gap = Math.abs((prediction.times[k] ?? 0) - offset);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = k;
+    }
+  }
+  // The node lies beyond the end of the look-ahead; nothing honest to draw.
+  if (bestGap > (prediction.times[prediction.sampleCount - 1] ?? 0) * 0.05 + 60) return;
+
+  const point = vec3(
+    prediction.path[best * 3]!,
+    prediction.path[best * 3 + 1]!,
+    prediction.path[best * 3 + 2]!,
+  );
+  const projected = camera.project(point);
+  if (!camera.onScreen(projected, 40)) return;
+
+  ctx.save();
+  ctx.translate(projected.x, projected.y);
+  ctx.strokeStyle = burning ? THEME.node.burning : THEME.node.marker;
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.lineWidth = 1.8;
+
+  ctx.beginPath();
+  ctx.arc(0, 0, 8, 0, Math.PI * 2);
+  ctx.stroke();
+  // Cross-hairs, so the marker is legible against a bright ring.
+  ctx.beginPath();
+  ctx.moveTo(-12, 0); ctx.lineTo(-4, 0);
+  ctx.moveTo(4, 0); ctx.lineTo(12, 0);
+  ctx.moveTo(0, -12); ctx.lineTo(0, -4);
+  ctx.moveTo(0, 4); ctx.lineTo(0, 12);
+  ctx.stroke();
+
+  const { value, unit } = splitDuration(offset);
+  ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`T-${Math.abs(value).toFixed(1)}${unit}`, 14, -6);
   ctx.restore();
 }

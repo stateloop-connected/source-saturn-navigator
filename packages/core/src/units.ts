@@ -67,3 +67,23 @@ export const hillRadius = (
   eccentricity = 0,
 ): number =>
   semiMajorAxisKm * (1 - eccentricity) * Math.cbrt(gmSecondary / (3 * gmPrimary));
+
+/**
+ * Radius of a body's sphere of influence, km — the Laplace sphere.
+ *
+ * Distinct from the Hill sphere and easy to confuse with it. The Hill sphere
+ * asks where a body's pull *beats* the primary's; this asks where the body is
+ * the better thing to measure an orbit *against* — where treating the primary
+ * as a perturbation is more accurate than the other way round. It comes out
+ * smaller, and it is the boundary a navigator actually uses.
+ *
+ * The numbers are humbling. Titan's is 43 000 km, comfortable. Mimas's is
+ * 249 km, against a body of radius 198 — there is a shell fifty kilometres
+ * thick around Mimas in which Mimas is the thing you are orbiting, and below it
+ * is the ground.
+ */
+export const sphereOfInfluence = (
+  gmSecondary: number,
+  gmPrimary: number,
+  semiMajorAxisKm: number,
+): number => semiMajorAxisKm * Math.pow(gmSecondary / gmPrimary, 0.4);

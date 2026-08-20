@@ -27,6 +27,8 @@ are flying in.
 | Saturn's figure | **Oblate, J2/J4/J6 in the force law**, never a point mass |
 | Moon phases | **Synthetic and documented as such**, except trojans and Janus/Epimetheus |
 | Prediction | **Fork the simulation and fly it.** No patched conics, no Keplerian shortcut |
+| Manoeuvres | **Impulsive to plan, finite to fly.** One node at a time |
+| Propellant | **Unlimited for now**, via a flag; the rocket equation stays implemented |
 | Camera | **Orthographic**, tilt over the full 0–180° so both ring faces are reachable |
 | Default locale | **Czech**, English via toggle |
 | Deployment | **Static files**, relative base, no backend, works offline |
@@ -58,7 +60,9 @@ and running only the app's dev server will use a stale `dist`.
 | `forces` | **The force law, and the only place it is written down** |
 | `system` | `SaturnSystem`: state, seeding, stepping, forking |
 | `module` | The spacecraft: thrust modes, the rocket equation |
+| `manoeuvre` | Nodes, solvers, and the autopilot that flies them |
 | `predict` | Fork-and-fly prediction, ghosts, approaches, impacts |
+| `mission` | The mother ship, the objectives, and where the module starts |
 | `field` | Field sampling in absolute / tidal / co-rotating modes |
 | `illumination` | Phases, Saturn's oblate shadow, ring lighting |
 
@@ -84,12 +88,24 @@ resolved, and trading it would let the inner moons come apart silently.
 module header, in the README, in `docs/accuracy.md` and in the interface. If
 real elements are ever imported, all four say so.
 
+**The autopilot must stay a pure function of time.** `autopilotThrust` takes no
+accumulated "Δv delivered so far" counter, and must not gain one. A counter
+would live in the live module and be absent from the predictor's fork, so a
+predicted burn would diverge from the flown one — exactly when the player is
+relying on it. The burn window is derived from the node's time and duration,
+both known in advance, and the step length is an argument so the last partial
+step can be duty-cycled rather than over-run.
+
+**Plan manoeuvres in the influence frame, not the selection.** They differ
+constantly, and relative to a body the module is not bound to every solver
+correctly returns nothing — which reads as a dead button.
+
 **The drawn-radius floor is the only visual lie.** Moons are drawn no smaller
 than 1.6 px. Nothing the physics reads may ever use that number.
 
 ## 5. Testing
 
-68 tests in core. The suite is not decorative — several caught real errors
+99 tests in core. The suite is not decorative — several caught real errors
 during the build, and the shape of each is worth keeping.
 
 - **`saturn.test.ts` is load-bearing.** It differentiates the potential
@@ -122,6 +138,8 @@ translated.
 ## 7. Known gaps
 
 - No attitude dynamics; thrust takes effect instantly.
+- One manoeuvre node at a time; no queue, and therefore no multi-burn plan.
+- Propellant is unlimited pending configurable module properties.
 - Resonances other than the anchored two are not set up (see §4, phases).
 - The 2019-and-later Norse discoveries are not in the catalogue.
 - `scripts/fetch-elements.mjs` is written but has not been run against the live

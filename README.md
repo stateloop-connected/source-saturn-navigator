@@ -42,11 +42,39 @@ npm test
 
 ## What it does
 
-**Navigation.** Throttle, prograde/retrograde/radial/normal thrust, a finite
-propellant budget and the rocket equation behind it. The navigation readout
-gives altitude, speed, and the osculating orbit about whichever body you have
-selected — which is the point, because "prograde" near Titan means something
-quite different depending on whether the frame is Titan's or Saturn's.
+**The mission.** Take the module from a low orbit skimming Saturn's cloud tops
+out to a parking orbit beyond Titan, where the mother ship is waiting. Five
+objectives, ticked off as you go: leave the atmosphere, clear the rings, reach
+Titan's orbit, reach the parking orbit, rendezvous. It costs about 13 km/s and
+takes a couple of weeks of simulated time.
+
+It is the trip that teaches the system. Departing from the cloud tops puts the
+burn deep in Saturn's well, where the Oberth effect is enormous. The rings are
+directly in the way. And the destination is a *moving target* on a 33-day orbit,
+so arriving at the right radius is not arriving — which is the point at which
+the ghost moons in the prediction overlay stop being decoration.
+
+**Piloting.** Throttle and prograde/retrograde/radial/normal thrust for flying
+by hand, plus a manoeuvre planner for flying properly: pick a solution
+(circularise at either apsis, raise to Titan, raise to the mother ship) or add a
+blank node and trim prograde/normal/radial by hand. An autopilot flies the node
+when its window arrives, and the time warp holds itself down around a burn so it
+cannot be stepped over.
+
+Propellant is currently **unlimited**, while the module's properties are not yet
+configurable. The rocket equation is implemented in full and still runs; the
+flag suppresses only the consumption.
+
+**Spheres of influence.** The module's governing body is marked on the map and
+named in the readout — the answer to "am I orbiting Titan, or orbiting Saturn
+near Titan". The radii are humbling: Titan's is 43 000 km, comfortable; Mimas's
+is 249 km against a body of radius 198, a shell fifty kilometres thick with the
+ground underneath.
+
+**Navigation.** The readout gives altitude, speed, and the osculating orbit
+about whichever body you have selected — which is the point, because "prograde"
+near Titan means something quite different depending on whether the frame is
+Titan's or Saturn's.
 
 **Trajectory prediction.** Look ahead from an hour to three months. The result
 is drawn as a path with *ghosts*: the moons sketched where they will be when
@@ -149,7 +177,7 @@ apps/game       @saturn/game — canvas renderer, interface, worker.
 `@saturn/core` is consumed through its built output, the same way a separate
 repository would consume it, so every script here builds it first.
 
-The core carries 68 tests. The load-bearing one differentiates Saturn's
+The core carries 99 tests. The load-bearing one differentiates Saturn's
 gravitational potential numerically and compares it against the hand-derived
 harmonic terms in the force law — a dropped sign in any of J2, J4 or J6 would
 otherwise produce a field that still looks like gravity, still holds moons in
@@ -174,6 +202,19 @@ would cost the integrator its symplectic structure.
 It is what holds the inner moons in the ring plane, and it drags a low orbit's
 node round by whole degrees a day. Model Saturn as a point mass and the game is
 wrong in a way the player can see within one orbit.
+
+**Why a burn is planned impulsively and flown finitely.** "Circularise at
+apoapsis" only has a closed-form answer for an instantaneous velocity change,
+but an engine takes minutes, during which prograde rotates underneath the ship.
+So the node is impulsive and the autopilot is not: it spreads the burn about the
+node's time and re-aims every step. The losses that produces are real and are
+left visible — a departure burn from the starting orbit loses about a fifth of
+its intended apoapsis, which is why the mission is flown as several burns at
+successive periapses rather than one.
+
+The autopilot is a pure function of time, with no accumulated state, so the
+predictor's forked copy computes exactly the same thrust as the live ship. A
+test holds a predicted burn to within 10⁻⁶ km of the flown one.
 
 **Why the module is massless.** A tonne against Mimas's 3.7·10¹⁹ kg is 26 orders
 of magnitude down. Leaving it out of the mutual-gravity arrays means the moons'

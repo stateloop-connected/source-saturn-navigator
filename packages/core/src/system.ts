@@ -32,9 +32,9 @@ import {
   type OrbitSummary,
 } from './elements.js';
 import { computeAccelerations, gravityAt } from './forces.js';
-import { MOONS, type Moon } from './moons.js';
+import { MOONS, moonSphereOfInfluence, type Moon } from './moons.js';
 import { SATURN_GM, eclipticToSaturn, saturnPotential } from './saturn.js';
-import { sub, vec3, type Vec3 } from './vec.js';
+import { length, sub, vec3, type Vec3 } from './vec.js';
 
 /**
  * Default integration step, seconds.
@@ -354,6 +354,45 @@ export class SaturnSystem {
       sub(probe.velocity, this.velocityOf(aboutIndex)),
       centreGm,
     );
+  }
+
+  /**
+   * Which body's sphere of influence a point lies in, or Saturn's index.
+   *
+   * The question behind "am I orbiting Titan, or am I orbiting Saturn near
+   * Titan", and the answer is one a player needs continuously — it decides
+   * which frame the navigation readout should be in and what "prograde" means.
+   *
+   * Where spheres overlap the *smallest* wins, because a nested sphere is the
+   * more local frame and therefore the more useful one. Overlaps are rare here
+   * but real: Telesto and Calypso sit inside no sphere but their own, while
+   * Titan's reaches 43 000 km and nothing else comes close to it.
+   *
+   * `position` is barycentric, matching everything else the class exposes.
+   */
+  influenceAt(position: Vec3): number {
+    let best = SATURN_INDEX;
+    let bestRadius = Infinity;
+
+    for (let i = 1; i < this.count; i++) {
+      const moon = this.bodies[i];
+      if (!moon) continue;
+
+      const radius = moonSphereOfInfluence(moon, SATURN_GM);
+      if (radius >= bestRadius) continue;
+      if (length(sub(position, this.positionOf(i))) < radius) {
+        best = i;
+        bestRadius = radius;
+      }
+    }
+    return best;
+  }
+
+  /** Sphere-of-influence radius of a body, km. Infinite for Saturn. */
+  influenceRadius(index: number): number {
+    if (index === SATURN_INDEX) return Infinity;
+    const moon = this.bodies[index];
+    return moon ? moonSphereOfInfluence(moon, SATURN_GM) : 0;
   }
 
   /**

@@ -74,6 +74,9 @@ export class Predictor {
         samples: store.predictionSettings.samples,
         ghosts: store.predictionSettings.ghosts,
         step: store.predictionSettings.step,
+        // The planned burn goes with the request, so the drawn path is the one
+        // the autopilot will actually fly rather than the coasting one.
+        node: store.node,
       },
     };
 

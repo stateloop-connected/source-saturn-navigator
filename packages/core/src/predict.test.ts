@@ -147,9 +147,15 @@ describe('what a prediction reports', () => {
 });
 
 describe('flying a planned burn', () => {
+  // These exercise the rocket equation, which `createModule` now switches off
+  // by default while the module's properties are not configurable. The
+  // machinery is still there and still has to work, so the tank is made finite
+  // explicitly rather than the coverage being dropped.
+  const withTank = () => ({ ...createModule(), infinitePropellant: false });
+
   it('raises the orbit and spends propellant doing it', () => {
     const system = new SaturnSystem(0, 60, subset('mimas'));
-    const module = createModule();
+    const module = withTank();
     const probe = circularProbe(system, 300_000);
 
     const ballistic = predict(system, module, probe, {
@@ -184,7 +190,7 @@ describe('flying a planned burn', () => {
 
   it('will not burn propellant it does not have', () => {
     const system = new SaturnSystem(0, 60, subset('mimas'));
-    const module = { ...createModule(), propellant: 5 };
+    const module = { ...withTank(), propellant: 5 };
     const prediction = predict(system, module, circularProbe(system, 300_000), {
       duration: 3_600,
       samples: 16,

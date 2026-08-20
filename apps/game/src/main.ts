@@ -221,7 +221,9 @@ function frame(now: number): void {
   lastFrame = now;
 
   if (!store.paused && !store.crashed) {
-    const wanted = wallDelta * store.warp;
+    // `effectiveWarp`, not `warp`: it clamps itself down around a planned burn
+    // so the autopilot's window cannot be stepped straight over.
+    const wanted = wallDelta * store.effectiveWarp;
     const affordable = MAX_STEPS_PER_FRAME * store.system.step;
     store.advance(Math.min(wanted, affordable));
   }

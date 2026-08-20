@@ -1,13 +1,11 @@
 {
   "app.title": "Saturn Navigator",
   "app.subtitle": "Newtonovský model soustavy Saturnu",
-
   "unit.millionKm": "mil. km",
   "unit.day": "d",
   "unit.hour": "h",
   "unit.minute": "min",
   "unit.second": "s",
-
   "panel.navigation": "Navigace",
   "panel.target": "Cíl",
   "panel.overlays": "Zobrazení",
@@ -17,7 +15,6 @@
   "panel.engine": "Motor",
   "panel.moons": "Měsíce",
   "panel.about": "O modelu",
-
   "nav.altitude": "Výška",
   "nav.distance": "Vzdálenost",
   "nav.speed": "Rychlost",
@@ -32,7 +29,6 @@
   "nav.unbound": "Únikový let",
   "nav.relativeTo": "Vztaženo k",
   "nav.dominantPull": "Nejsilněji působí",
-
   "engine.throttle": "Tah",
   "engine.propellant": "Palivo",
   "engine.deltaV": "Zbývající Δv",
@@ -46,13 +42,11 @@
   "engine.mode.inertial": "Pevný směr",
   "engine.circularise": "Zkruhovat dráhu: {{cost}} m/s",
   "engine.empty": "Nádrže prázdné",
-
   "time.warp": "Zrychlení",
   "time.pause": "Pauza",
   "time.resume": "Spustit",
   "time.date": "Datum",
   "time.elapsed": "Uplynulo",
-
   "overlay.orbits": "Dráhy měsíců",
   "overlay.moonLabels": "Názvy měsíců",
   "overlay.trail": "Prošlá dráha",
@@ -61,7 +55,6 @@
   "overlay.sunArrow": "Směr ke Slunci",
   "overlay.shadows": "Stíny a osvětlení",
   "overlay.hillSpheres": "Hillova sféra",
-
   "field.mode": "Režim",
   "field.mode.absolute": "Absolutní",
   "field.mode.relative": "Slapové (vůči cíli)",
@@ -74,7 +67,6 @@
   "field.followModule": "Sledovat modul",
   "field.atCursor": "Pod kurzorem",
   "field.strongest": "Nejsilnější příspěvky",
-
   "prediction.duration": "Dohled dopředu",
   "prediction.ghosts": "Počet snímků",
   "prediction.step": "Krok integrace",
@@ -87,7 +79,6 @@
   "prediction.approach": "{{body}}: {{distance}} za {{time}}",
   "prediction.noApproach": "Žádné blízké přiblížení",
   "prediction.help": "Předpověď vznikne tak, že se celá simulace zkopíruje a nechá běžet dopředu — stejný zákon síly, stejný integrátor. Není to odhad toho, co se stane; je to to, co se stane.",
-
   "target.select": "Vybrat těleso",
   "target.saturn": "Saturn",
   "target.placeInOrbit": "Umístit modul na oběžnou dráhu",
@@ -104,7 +95,6 @@
   "target.escape": "Úniková rychlost",
   "target.albedo": "Albedo",
   "target.group": "Skupina",
-
   "group.ring-shepherd": "Pastýřské měsíce prstenců",
   "group.inner": "Vnitřní měsíce",
   "group.trojan": "Trojané",
@@ -113,24 +103,19 @@
   "group.inuit": "Inuitská skupina",
   "group.gallic": "Galská skupina",
   "group.norse": "Severská skupina",
-
   "camera.zoom": "Přiblížení",
   "camera.tilt": "Náklon",
   "camera.faceSun": "Osvětlená strana",
   "camera.topDown": "Pohled od pólu",
   "camera.reset": "Výchozí pohled",
-
   "crash.title": "Konec letu",
   "crash.body": "Modul narazil do tělesa {{body}} rychlostí {{speed}} km/s.",
   "crash.restart": "Začít znovu",
-
   "action.reset": "Restartovat let",
   "action.language": "English",
-
   "about.text": "Saturn a 53 jeho měsíců, integrované společně Yoshidovou symplektickou metodou 4. řádu. Saturnova zploštělost (J2 = 1,63·10⁻², patnáctkrát více než u Země) je v zákoně síly od začátku — právě ona drží vnitřní soustavu v rovině prstenců.",
   "about.accuracy": "Přesné jsou hmotnosti, poloměry a tvary drah. Polohy měsíců podél drah v daném datu přesné nejsou — jsou odvozeny z názvu měsíce, kromě trojanů a dvojice Janus–Epimetheus, kde je fáze dynamickým faktem.",
   "about.source": "Zdrojový kód",
-
   "help.title": "Ovládání",
   "help.pan": "Táhnutí myší — posun",
   "help.zoom": "Kolečko — přiblížení",
@@ -139,7 +124,6 @@
   "help.throttle": "Shift / Ctrl — tah nahoru a dolů",
   "help.warp": "Klávesy , a . — zrychlení času",
   "help.pauseKey": "Mezerník — pauza",
-
   "moon.note.pan": "Obíhá uvnitř Enckeho dělení, které svou přítomností udržuje otevřené.",
   "moon.note.daphnis": "Uvnitř Keelerova dělení; vlny, které vyvolává na jeho okrajích, jsou vysoké až 1,5 km.",
   "moon.note.prometheus": "Každý oběh vytáhne z prstence F pramen materiálu.",
@@ -159,5 +143,48 @@
   "moon.note.phoebe": "Obíhá retrográdně; pravděpodobně zachycené těleso z Kuiperova pásu.",
   "moon.note.siarnaq": "Největší z prográdních nepravidelných měsíců.",
   "moon.note.albiorix": "Největší člen galské skupiny.",
-  "moon.note.fornjot": "Nejvzdálenější zde modelovaný měsíc — 25 milionů km od Saturnu."
+  "moon.note.fornjot": "Nejvzdálenější zde modelovaný měsíc — 25 milionů km od Saturnu.",
+  "panel.manoeuvre": "Manévr",
+  "panel.mission": "Úkol",
+  "nav.influence": "Sféra vlivu",
+  "engine.autopilot": "Autopilot letí manévr",
+  "engine.burning": "MOTOR BĚŽÍ — zbývá {{time}}",
+  "engine.ignition": "Zážeh za {{time}}",
+  "engine.warpHeld": "Zrychlení času sníženo, aby se zážeh nepřeskočil.",
+  "engine.unlimited": "neomezené",
+  "manoeuvre.help": "Naplánujte zážeh: vyberte hotové řešení, nebo přidejte prázdný uzel a dolaďte složky ručně. Předpověď v mapě pak ukáže dráhu, kterou autopilot skutečně poletí.",
+  "manoeuvre.circulariseApo": "Zkruhovat v apocentru",
+  "manoeuvre.circularisePeri": "Zkruhovat v pericentru",
+  "manoeuvre.raiseTitan": "Zvýšit k Titanu",
+  "manoeuvre.raiseParking": "Zvýšit k mateřské lodi",
+  "manoeuvre.addBlank": "Přidat prázdný uzel",
+  "manoeuvre.transferHint": "Hohmannův přechod odsud k mateřské lodi:",
+  "manoeuvre.departure": "Odletový zážeh",
+  "manoeuvre.arrival": "Příletový zážeh",
+  "manoeuvre.flightTime": "Doba letu",
+  "manoeuvre.total": "Celkem Δv",
+  "manoeuvre.countdown": "Do uzlu",
+  "manoeuvre.now": "teď",
+  "manoeuvre.burnLength": "Délka zážehu",
+  "manoeuvre.prograde": "Po dráze",
+  "manoeuvre.normal": "Kolmo",
+  "manoeuvre.radial": "Radiálně",
+  "manoeuvre.timing": "Načasování",
+  "manoeuvre.resulting": "Výsledná dráha (dvoutělesový odhad):",
+  "manoeuvre.clear": "Zrušit uzel",
+  "manoeuvre.executeNow": "Zažehnout ihned",
+  "mission.brief": "Dostat modul z atmosféry Saturnu na parkovací dráhu za Titanem, kde čeká mateřská loď.",
+  "mission.objective.leave-atmosphere": "Opustit atmosféru (pericentrum nad 62 000 km)",
+  "mission.objective.clear-rings": "Vyváznout z prstenců (pericentrum nad 140 600 km)",
+  "mission.objective.reach-titan": "Dosáhnout dráhy Titanu",
+  "mission.objective.reach-parking": "Dosáhnout parkovací dráhy (2 mil. km)",
+  "mission.objective.rendezvous": "Setkat se s mateřskou lodí",
+  "mission.distance": "Vzdálenost k lodi",
+  "mission.relativeSpeed": "Relativní rychlost",
+  "mission.complete": "Setkání dokončeno. Modul je zpět u mateřské lodi.",
+  "mission.frameShip": "Zaměřit mateřskou loď",
+  "overlay.influence": "Sféra vlivu",
+  "overlay.mission": "Mateřská loď a cíl",
+  "manoeuvre.frame": "Vztažné těleso",
+  "manoeuvre.unbound": "Vůči tomuto tělesu je dráha úniková — není co zkruhovat."
 }

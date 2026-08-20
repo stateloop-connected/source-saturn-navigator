@@ -7,10 +7,12 @@
  * *where to burn and how much*, and slewing a spacecraft is a different game
  * that would sit on top of this one rather than inside it.
  *
- * What is not simplified is the rocket equation. Propellant is finite, thrust
- * costs mass, and the mass loss feeds back into the acceleration within the
- * same burn. A player who spends their margin cannot get it back, which is what
- * makes a gravity assist worth planning instead of just thrusting harder.
+ * The rocket equation is implemented in full — thrust costs mass, and the mass
+ * loss feeds back into the acceleration within the same burn — but it is
+ * currently switched off: `infinitePropellant` defaults to true while the
+ * module's properties are not yet configurable. The machinery stays in place
+ * rather than being deleted and rebuilt later, and the flag suppresses only the
+ * consumption, never the physics.
  */
 
 import { SATURN_GM } from './saturn.js';
@@ -56,18 +58,25 @@ export interface ModuleSpec {
 }
 
 /**
- * A small chemical stage, sized so that the interesting manoeuvres are just
- * about affordable and the careless ones are not.
+ * The stage, sized by the departure burn.
  *
- * 2 200 m/s of total budget is enough to leave a Titan orbit and reach
- * Enceladus with something in reserve, and nowhere near enough to fly the same
- * trip on brute force — which is the tension the game is made of. The thrust
- * figure gives about 0.9 m/s2 fully fuelled, so a large burn takes minutes and
- * cannot be treated as instantaneous.
+ * Thrust is set by one requirement: a burn must be short against the orbit it
+ * is made from. Leaving the starting orbit costs 9.8 km/s, and the orbit itself
+ * lasts 4.25 hours. At 2 kN — the obvious "small module" figure, and what this
+ * was first built with — that burn takes 2.9 hours, so the thrust vector swings
+ * through most of a revolution and the majority of the velocity change is spent
+ * pushing sideways. Apoapsis came out at 380 000 km instead of two million, and
+ * nothing on screen explained why.
+ *
+ * 15 kN gives 7.1 m/s2 and brings the same burn down to 23 minutes, about a
+ * twelfth of an orbit. That is short enough for the manoeuvre to behave roughly
+ * as the impulsive plan says, and still long enough that the losses are visible
+ * and that splitting a big burn across two periapsis passes measurably helps —
+ * which is the lesson worth keeping.
  */
 export const DEFAULT_SPEC: ModuleSpec = {
   dryMass: 1_200,
-  maxThrust: 2_000,
+  maxThrust: 15_000,
   specificImpulse: 320,
 };
 
@@ -84,11 +93,22 @@ export interface ModuleState {
   inertialAim: Vec3;
   /** Index of the body the thrust modes are resolved against. */
   referenceIndex: number;
+  /**
+   * Ignore the tanks entirely.
+   *
+   * On while the module's properties are not yet configurable, so that flying
+   * the system can be learned without the rocket equation also being in the
+   * way. Everything downstream still goes through the same code paths — the
+   * flag suppresses the *consumption*, not the physics — so switching it off
+   * later changes one boolean rather than a dozen call sites.
+   */
+  infinitePropellant: boolean;
 }
 
 export const createModule = (
   spec: ModuleSpec = DEFAULT_SPEC,
   propellant: number = DEFAULT_PROPELLANT,
+  infinitePropellant = true,
 ): ModuleState => ({
   spec,
   propellant,
@@ -96,6 +116,7 @@ export const createModule = (
   mode: 'prograde',
   inertialAim: vec3(1, 0, 0),
   referenceIndex: 0,
+  infinitePropellant,
 });
 
 export const totalMass = (state: ModuleState): number =>
@@ -109,9 +130,9 @@ export const totalMass = (state: ModuleState): number =>
  * is what a trajectory is bought with.
  */
 export const deltaVRemaining = (state: ModuleState): number =>
-  state.spec.specificImpulse *
-  G0 *
-  Math.log(totalMass(state) / state.spec.dryMass);
+  state.infinitePropellant
+    ? Infinity
+    : state.spec.specificImpulse * G0 * Math.log(totalMass(state) / state.spec.dryMass);
 
 /** Propellant burnt per second at the current throttle, kg/s. */
 export const massFlowRate = (state: ModuleState): number =>
@@ -161,7 +182,8 @@ export function thrustAcceleration(
   relativePosition: Vec3,
   relativeVelocity: Vec3,
 ): Vec3 {
-  if (state.propellant <= 0 || state.throttle <= 0) return ZERO;
+  if (state.throttle <= 0) return ZERO;
+  if (!state.infinitePropellant && state.propellant <= 0) return ZERO;
 
   const direction = thrustDirection(
     state.mode,
@@ -187,6 +209,8 @@ export function consumePropellant(
   state: ModuleState,
   seconds: number,
 ): { state: ModuleState; spent: number } {
+  if (state.infinitePropellant) return { state, spent: 0 };
+
   const wanted = massFlowRate(state) * seconds;
   const spent = Math.min(wanted, state.propellant);
   return { state: { ...state, propellant: state.propellant - spent }, spent };

@@ -1,13 +1,11 @@
 {
   "app.title": "Saturn Navigator",
   "app.subtitle": "A Newtonian model of the Saturn system",
-
   "unit.millionKm": "million km",
   "unit.day": "d",
   "unit.hour": "h",
   "unit.minute": "min",
   "unit.second": "s",
-
   "panel.navigation": "Navigation",
   "panel.target": "Target",
   "panel.overlays": "Display",
@@ -17,7 +15,6 @@
   "panel.engine": "Engine",
   "panel.moons": "Moons",
   "panel.about": "About the model",
-
   "nav.altitude": "Altitude",
   "nav.distance": "Distance",
   "nav.speed": "Speed",
@@ -32,7 +29,6 @@
   "nav.unbound": "Escape trajectory",
   "nav.relativeTo": "Relative to",
   "nav.dominantPull": "Strongest pull",
-
   "engine.throttle": "Throttle",
   "engine.propellant": "Propellant",
   "engine.deltaV": "Δv remaining",
@@ -46,13 +42,11 @@
   "engine.mode.inertial": "Fixed direction",
   "engine.circularise": "Circularise: {{cost}} m/s",
   "engine.empty": "Tanks empty",
-
   "time.warp": "Time warp",
   "time.pause": "Pause",
   "time.resume": "Resume",
   "time.date": "Date",
   "time.elapsed": "Elapsed",
-
   "overlay.orbits": "Moon orbits",
   "overlay.moonLabels": "Moon names",
   "overlay.trail": "Flown path",
@@ -61,7 +55,6 @@
   "overlay.sunArrow": "Direction to the Sun",
   "overlay.shadows": "Shadows and lighting",
   "overlay.hillSpheres": "Hill sphere",
-
   "field.mode": "Mode",
   "field.mode.absolute": "Absolute",
   "field.mode.relative": "Tidal (relative to target)",
@@ -74,7 +67,6 @@
   "field.followModule": "Follow the module",
   "field.atCursor": "Under the cursor",
   "field.strongest": "Strongest contributions",
-
   "prediction.duration": "Look ahead",
   "prediction.ghosts": "Ghost snapshots",
   "prediction.step": "Integration step",
@@ -87,7 +79,6 @@
   "prediction.approach": "{{body}}: {{distance}} in {{time}}",
   "prediction.noApproach": "No close approach",
   "prediction.help": "The prediction is made by forking the whole simulation and flying it forward — same force law, same integrator. It is not an estimate of what will happen; it is what will happen.",
-
   "target.select": "Select a body",
   "target.saturn": "Saturn",
   "target.placeInOrbit": "Place the module in orbit",
@@ -104,7 +95,6 @@
   "target.escape": "Escape speed",
   "target.albedo": "Albedo",
   "target.group": "Group",
-
   "group.ring-shepherd": "Ring shepherds",
   "group.inner": "Inner moons",
   "group.trojan": "Trojans",
@@ -113,24 +103,19 @@
   "group.inuit": "Inuit group",
   "group.gallic": "Gallic group",
   "group.norse": "Norse group",
-
   "camera.zoom": "Zoom",
   "camera.tilt": "Tilt",
   "camera.faceSun": "Lit face",
   "camera.topDown": "Pole-on view",
   "camera.reset": "Default view",
-
   "crash.title": "Flight over",
   "crash.body": "The module struck {{body}} at {{speed}} km/s.",
   "crash.restart": "Start again",
-
   "action.reset": "Restart the flight",
   "action.language": "Čeština",
-
   "about.text": "Saturn and 53 of its moons, integrated together with Yoshida's 4th-order symplectic method. Saturn's oblateness (J2 = 1.63·10⁻², fifteen times the Earth's) is in the force law from the start — it is what holds the inner system in the ring plane.",
   "about.accuracy": "Masses, radii and orbit shapes are accurate. Where each moon sits along its orbit on a given date is not — that is derived from the moon's name, except for the trojans and Janus–Epimetheus, where phase is a dynamical fact.",
   "about.source": "Source code",
-
   "help.title": "Controls",
   "help.pan": "Drag — pan",
   "help.zoom": "Wheel — zoom",
@@ -139,7 +124,6 @@
   "help.throttle": "Shift / Ctrl — throttle up and down",
   "help.warp": ", and . — time warp",
   "help.pauseKey": "Space — pause",
-
   "moon.note.pan": "Orbits inside the Encke gap, which it keeps open by being there.",
   "moon.note.daphnis": "Inside the Keeler gap; the waves it raises on the gap edges stand 1.5 km high.",
   "moon.note.prometheus": "Draws a streamer of material out of the F ring on every orbit.",
@@ -159,5 +143,48 @@
   "moon.note.phoebe": "Retrograde, and probably a captured body from the Kuiper belt.",
   "moon.note.siarnaq": "The largest of the prograde irregular moons.",
   "moon.note.albiorix": "The largest member of the Gallic group.",
-  "moon.note.fornjot": "The most distant moon modelled here — 25 million km from Saturn."
+  "moon.note.fornjot": "The most distant moon modelled here — 25 million km from Saturn.",
+  "panel.manoeuvre": "Manoeuvre",
+  "panel.mission": "Mission",
+  "nav.influence": "Sphere of influence",
+  "engine.autopilot": "Autopilot flies the node",
+  "engine.burning": "ENGINE RUNNING — {{time}} left",
+  "engine.ignition": "Ignition in {{time}}",
+  "engine.warpHeld": "Time warp held down so the burn is not stepped over.",
+  "engine.unlimited": "unlimited",
+  "manoeuvre.help": "Plan a burn: pick a ready-made solution, or add a blank node and trim the components by hand. The prediction on the map then shows the path the autopilot will actually fly.",
+  "manoeuvre.circulariseApo": "Circularise at apoapsis",
+  "manoeuvre.circularisePeri": "Circularise at periapsis",
+  "manoeuvre.raiseTitan": "Raise to Titan",
+  "manoeuvre.raiseParking": "Raise to the mother ship",
+  "manoeuvre.addBlank": "Add a blank node",
+  "manoeuvre.transferHint": "Hohmann transfer from here to the mother ship:",
+  "manoeuvre.departure": "Departure burn",
+  "manoeuvre.arrival": "Arrival burn",
+  "manoeuvre.flightTime": "Flight time",
+  "manoeuvre.total": "Total Δv",
+  "manoeuvre.countdown": "To the node",
+  "manoeuvre.now": "now",
+  "manoeuvre.burnLength": "Burn length",
+  "manoeuvre.prograde": "Prograde",
+  "manoeuvre.normal": "Normal",
+  "manoeuvre.radial": "Radial",
+  "manoeuvre.timing": "Timing",
+  "manoeuvre.resulting": "Resulting orbit (two-body estimate):",
+  "manoeuvre.clear": "Clear the node",
+  "manoeuvre.executeNow": "Burn now",
+  "mission.brief": "Take the module out of Saturn's atmosphere to a parking orbit beyond Titan, where the mother ship is waiting.",
+  "mission.objective.leave-atmosphere": "Leave the atmosphere (periapsis above 62 000 km)",
+  "mission.objective.clear-rings": "Clear the rings (periapsis above 140 600 km)",
+  "mission.objective.reach-titan": "Reach Titan's orbit",
+  "mission.objective.reach-parking": "Reach the parking orbit (2 million km)",
+  "mission.objective.rendezvous": "Rendezvous with the mother ship",
+  "mission.distance": "Distance to the ship",
+  "mission.relativeSpeed": "Relative speed",
+  "mission.complete": "Rendezvous complete. The module is back with the mother ship.",
+  "mission.frameShip": "Frame the mother ship",
+  "overlay.influence": "Sphere of influence",
+  "overlay.mission": "Mother ship and target",
+  "manoeuvre.frame": "Reference body",
+  "manoeuvre.unbound": "The orbit is unbound about this body — there is nothing to circularise."
 }

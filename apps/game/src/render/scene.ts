@@ -15,6 +15,9 @@ import { drawHillSphere, drawModule, drawMoons, type DrawnBody } from './bodies.
 import { drawPlanetSystem, drawSunArrow } from './planet.js';
 import {
   drawFieldGrid,
+  drawInfluenceSphere,
+  drawMotherShip,
+  drawNode,
   drawOrbits,
   drawPrediction,
   drawScaleBar,
@@ -95,6 +98,11 @@ export function drawScene(ctx: CanvasRenderingContext2D, store: Store, now: numb
     drawHillSphere(ctx, camera, system, store.selectedIndex);
   }
 
+  // Where the module actually is, in the sense that matters for navigation.
+  if (overlays.influence) {
+    drawInfluenceSphere(ctx, camera, system, store.influenceIndex);
+  }
+
   if (overlays.field) {
     const centre =
       store.field.centre ?? store.saturnCentred(store.probe.position);
@@ -114,10 +122,23 @@ export function drawScene(ctx: CanvasRenderingContext2D, store: Store, now: numb
     store.fieldGrid = null;
   }
 
+  if (overlays.mission) {
+    drawMotherShip(
+      ctx,
+      camera,
+      store.motherShip.position,
+      store.mission?.complete ?? false,
+    );
+  }
+
   if (overlays.trail) drawTrail(ctx, camera, store.trail);
 
   if (overlays.prediction && store.prediction) {
     drawPrediction(ctx, camera, system, store.prediction, store.predictionStale);
+  }
+
+  if (store.node && overlays.prediction) {
+    drawNode(ctx, camera, store.node, store.prediction, system.time, store.burning);
   }
 
   drawModule(

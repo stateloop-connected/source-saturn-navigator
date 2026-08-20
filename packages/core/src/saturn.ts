@@ -216,6 +216,37 @@ export function saturnPotential(position: Vec3): number {
 }
 
 /**
+ * Speed of a circular orbit at a point in Saturn's *real* field, km/s.
+ *
+ * Not `sqrt(GM/r)`. That is the point-mass answer, and around Saturn it is
+ * wrong by more than it sounds: J2 adds 2.4% to the equatorial field at the
+ * cloud tops, so the true circular speed is 1.3% higher. An orbit seeded at the
+ * point-mass speed is not circular but elliptical and *under*-speed — at
+ * 60 800 km its periapsis comes out 3 100 km lower, which is below the surface.
+ *
+ * So anything placing a spacecraft in a circular orbit near Saturn has to use
+ * this, and the naive version is a straightforward way to start the player in a
+ * decaying orbit without either of you noticing.
+ *
+ * Derived from the acceleration rather than from a series, so it stays correct
+ * as harmonics are added or changed, and works off the equator where the field
+ * is no longer purely radial.
+ */
+export function circularSpeedInField(position: Vec3): number {
+  const r = Math.sqrt(position.x ** 2 + position.y ** 2 + position.z ** 2);
+  if (r === 0) return 0;
+
+  const acceleration = saturnAcceleration(position);
+  // Component pulling toward the centre; that is what a circular orbit balances.
+  const inward =
+    -(acceleration.x * position.x +
+      acceleration.y * position.y +
+      acceleration.z * position.z) / r;
+
+  return Math.sqrt(Math.max(0, inward * r));
+}
+
+/**
  * Distance from Saturn's centre to its surface along a direction, km.
  *
  * The oblateness is large enough to matter for a collision test: a polar

@@ -472,3 +472,124 @@ body {
     max-height: 34vh;
   }
 }
+
+/* ------------------------------------------------- pilot and manoeuvre UI */
+
+/*
+ * The nudge row.
+ *
+ * Six buttons and a value on one line, in a 268-pixel column. They only fit
+ * because the buttons are allowed to shrink and the value is not: the number is
+ * what the player is reading, and the buttons are targets they already know the
+ * position of.
+ */
+.nudge-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nudge-label {
+  flex: 0 0 52px;
+  font-size: 10.5px;
+  color: var(--dim);
+}
+
+.button-nudge {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 2px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.nudge-value {
+  flex: 0 0 54px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  font-weight: 600;
+}
+
+.solver-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.solver-grid .button {
+  font-size: 11px;
+  padding: 6px 4px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------- burn indicator */
+
+.burn-status:not(:empty) {
+  margin-top: 2px;
+}
+
+/*
+ * The burn indicator pulses.
+ *
+ * Motion rather than colour alone, because this is the one state where the
+ * player must notice without looking: the engine is running and the clock has
+ * been slowed to let it. `prefers-reduced-motion` drops the animation and keeps
+ * the colour, which still carries the meaning.
+ */
+.burn-live {
+  display: block;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: #14100a;
+  background: var(--warn);
+  border-radius: 4px;
+  animation: burn-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes burn-pulse {
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .burn-live { animation: none; }
+}
+
+/* -------------------------------------------------------------- objectives */
+
+.objective {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+
+.objective-mark {
+  flex: 0 0 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.objective.is-done {
+  color: var(--text);
+}
+
+.objective.is-done .objective-mark {
+  color: #5ef2d0;
+}
+
+.objective.is-current {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.panel-help.is-success {
+  color: #5ef2d0;
+  font-weight: 600;
+}

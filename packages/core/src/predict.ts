@@ -27,6 +27,7 @@ import {
   type ModuleState,
   type ThrustMode,
 } from './module.js';
+import { autopilotThrust, type ManoeuvreNode } from './manoeuvre.js';
 import { ZERO, length, sub, vec3, type Vec3 } from './vec.js';
 
 /** A burn scheduled for the prediction to fly. */
@@ -65,6 +66,16 @@ export interface PredictionRequest {
    */
   ghosts?: number;
   burns?: readonly PlannedBurn[];
+  /**
+   * A planned manoeuvre for the prediction to fly.
+   *
+   * Flown through `autopilotThrust`, which is the same function the live
+   * simulation uses — so the predicted path through a burn is the path that
+   * will actually be flown, finite-burn losses and all. Predicting the burn as
+   * an instantaneous kick instead would be easier and would quietly disagree
+   * with the ship for exactly the manoeuvres the player cares most about.
+   */
+  node?: ManoeuvreNode | null;
 }
 
 export interface Ghost {
@@ -238,11 +249,48 @@ export function predict(
   while (offset < duration && !impact) {
     const dt = Math.min(step, duration - offset);
 
+    /*
+     * A manoeuvre node takes precedence over the burn list.
+     *
+     * The two mechanisms exist for different things — the node is what the
+     * player plans in the interface, the burn list is for scripted profiles —
+     * and letting both fire at once would silently double a burn.
+     */
+    const node = request.node;
+    if (node) {
+      const reference = node.referenceIndex;
+      flown.thrust = autopilotThrust(
+        node,
+        { ...module, propellant },
+        copy.time,
+        dt,
+        sub(flown.position, copy.positionOf(reference)),
+        sub(flown.velocity, copy.velocityOf(reference)),
+      );
+      if (length(flown.thrust) > 0 && !module.infinitePropellant) {
+        propellant = Math.max(
+          0,
+          propellant -
+            (module.spec.maxThrust / (module.spec.specificImpulse * 9.806_65)) * dt,
+        );
+      }
+      copy.stepOnce(dt);
+      offset = copy.time - start;
+
+      if (checkProximity(offset)) break;
+      if (offset >= nextSample) recordSample(offset);
+      if (offset >= nextGhost && ghosts.length < ghostCount) {
+        recordGhost(offset);
+        nextGhost += ghostInterval;
+      }
+      continue;
+    }
+
     // Resolve thrust for this step from the plan, against the same reference
     // body the live module is using — so a plan made while targeting Titan
     // means the same thing when it is flown.
     const burn = burnAt(burns, offset);
-    if (burn && propellant > 0) {
+    if (burn && (module.infinitePropellant || propellant > 0)) {
       const reference = module.referenceIndex;
       const flying: ModuleState = {
         ...module,
@@ -256,11 +304,13 @@ export function predict(
         sub(flown.position, copy.positionOf(reference)),
         sub(flown.velocity, copy.velocityOf(reference)),
       );
-      const spent =
-        ((burn.throttle * module.spec.maxThrust) /
-          (module.spec.specificImpulse * 9.806_65)) *
-        dt;
-      propellant = Math.max(0, propellant - spent);
+      if (!module.infinitePropellant) {
+        const spent =
+          ((burn.throttle * module.spec.maxThrust) /
+            (module.spec.specificImpulse * 9.806_65)) *
+          dt;
+        propellant = Math.max(0, propellant - spent);
+      }
     } else {
       flown.thrust = ZERO;
     }

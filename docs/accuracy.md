@@ -146,6 +146,22 @@ by 2.1·10⁻⁴ over each orbit, which is *not* integration error — it is Sat
 bulge breathing the ellipse twice per orbit, and a test that failed to average
 over whole periods would read it as drift.
 
+**Circular orbits are not `sqrt(GM/r)`.** J2 adds 2.4% to Saturn's equatorial
+field at the cloud tops, so the true circular speed there is 1.3% higher than
+the point-mass value. Seeding an orbit at the point-mass speed produces an
+ellipse whose periapsis is 3 100 km lower — underground. `circularSpeedInField`
+derives the speed from the actual acceleration instead, and everything placing a
+spacecraft near Saturn uses it.
+
+**Burns are duty-cycled across a step.** Thrust is held constant over an
+integration step, so testing "is the clock inside the burn window?" at the start
+of each step over-runs the end by up to a full step. At a 60 s step a 1 330 s
+burn ran for 1 380 s — 3.8% extra Δv, which at periapsis put apoapsis 68% past
+its target. The autopilot therefore scales its thrust by the fraction of the
+coming step that falls inside the window, which makes the delivered Δv exact at
+any step size, and lets the predictor use a coarser step than the live
+simulation without the two disagreeing.
+
 **What is neglected.** The Sun's tidal pull across the moon system, about 10⁻⁷
 of Saturn's own — smaller than the error in the moon elements by orders of
 magnitude. Saturn's pole is held fixed, neglecting the torque the moons exert
@@ -165,8 +181,22 @@ elements are a Cassini-era fit.
 Massless, and treated as such throughout — a tonne against Mimas's 3.7·10¹⁹ kg
 is 26 orders of magnitude down. It feels gravity and exerts none.
 
-The rocket equation is not simplified: propellant is finite, thrust costs mass,
-and the mass loss feeds back into the acceleration within the same burn.
+The rocket equation is implemented in full — thrust costs mass and the mass loss
+feeds back into the acceleration within the same burn — but it is currently
+switched off: `infinitePropellant` defaults to true while the module's
+properties are not configurable. The flag suppresses consumption, never physics.
+
+Thrust is 15 kN against a 2 100 kg module, giving 7.1 m/s². That figure was set
+by one requirement rather than chosen: a burn must be short against the orbit it
+is made from. At the 2 kN this was first built with, the 9.5 km/s departure burn
+took 2.9 hours out of a 4.25-hour orbit, so the thrust vector swung through most
+of a revolution and apoapsis came out at a fifth of the target. 15 kN brings the
+same burn to 23 minutes — about a twelfth of an orbit, short enough to behave
+roughly as planned and long enough that the losses stay visible.
+
+Those losses are not small and are not hidden. A single departure burn still
+falls about 20% short of its impulsive target, which is why the mission is flown
+as successive periapsis burns.
 
 What *is* simplified is attitude. There are no reaction wheels and no time spent
 slewing; a thrust command takes effect at once. That is a real omission, and the

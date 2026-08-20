@@ -53,7 +53,7 @@
  * of this at once.
  */
 
-import { hillRadius } from './units.js';
+import { hillRadius, sphereOfInfluence } from './units.js';
 
 export type MoonGroup =
   | 'ring-shepherd'
@@ -325,3 +325,12 @@ export function orbitalPeriod(moon: Moon, primaryGm: number): number {
  */
 export const moonHillRadius = (moon: Moon, primaryGm: number): number =>
   hillRadius(moon.gm, primaryGm, moon.elements.a, moon.elements.e);
+
+/**
+ * Radius of a moon's sphere of influence, km.
+ *
+ * What the interface means by "you are at Titan" rather than "you are near
+ * Titan": inside it, the moon is the body your orbit is measured against.
+ */
+export const moonSphereOfInfluence = (moon: Moon, primaryGm: number): number =>
+  sphereOfInfluence(moon.gm, primaryGm, moon.elements.a);

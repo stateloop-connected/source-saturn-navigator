@@ -17,6 +17,8 @@ export * from './elements.js';
 export * from './forces.js';
 export * from './system.js';
 export * from './module.js';
+export * from './manoeuvre.js';
 export * from './predict.js';
+export * from './mission.js';
 export * from './field.js';
 export * from './illumination.js';
