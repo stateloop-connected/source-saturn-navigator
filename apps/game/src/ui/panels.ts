@@ -29,6 +29,7 @@ import {
   circulariseAtPeriapsis,
   emptyNode,
   hohmannTransfer,
+  nodeFromAngles,
   nodeMagnitude,
   orbitAfter,
   raiseToRadius,
@@ -61,6 +62,8 @@ import {
   t,
 } from '../i18n/i18n.js';
 import type { Store } from '../state/store.js';
+import { windowIsMeaningful } from '@saturn/core/transfer';
+import { AttitudeDial } from './attitude.js';
 import { button, div, element, panel, readout, select, slider, text, toggle } from './dom.js';
 
 const THRUST_MODES: ThrustMode[] = [
@@ -70,6 +73,9 @@ const THRUST_MODES: ThrustMode[] = [
   'radial-in',
   'normal',
   'anti-normal',
+  // Last, and set by dragging the dial rather than by pressing this — the
+  // button is here so the mode is visible and can be returned to.
+  'aimed',
 ];
 
 /** Look-ahead options, in seconds. Geometric, from an orbit to a season. */
@@ -98,6 +104,9 @@ export class Interface {
   private throttleInput!: HTMLInputElement;
   private modeButtons = new Map<ThrustMode, HTMLButtonElement>();
   private burnStatusBody!: HTMLElement;
+  private dial!: AttitudeDial;
+  private aimBody!: HTMLElement;
+  private transferBody!: HTMLElement;
   private manoeuvreBody!: HTMLElement;
   private missionBody!: HTMLElement;
 
@@ -132,22 +141,35 @@ export class Interface {
     this.moonButtons.clear();
     this.modeButtons.clear();
 
+    /*
+     * A cockpit rather than a document.
+     *
+     * Instruments frame the viewport on four sides and the middle is left
+     * clear, because the middle is where Saturn and the trajectory are. The
+     * flight controls — attitude, throttle, burn state — sit along the bottom
+     * where a pilot's hands would be, and the planning instruments, which are
+     * read rather than operated, go up the sides.
+     */
     this.root.append(this.buildTopBar());
     this.root.append(
-      div('column column-left', [this.buildTargetPanel(), this.buildMoonPanel()]),
+      div('column column-left', [
+        this.buildNavigationPanel(),
+        this.buildTargetPanel(),
+        this.buildMoonPanel(),
+      ]),
     );
     this.root.append(
       div('column column-right', [
         this.buildMissionPanel(),
-        this.buildNavigationPanel(),
-        this.buildEnginePanel(),
+        this.buildTransferPanel(),
         this.buildManoeuvrePanel(),
+        this.buildPredictionPanel(),
         this.buildOverlayPanel(),
         this.buildFieldPanel(),
-        this.buildPredictionPanel(),
         this.buildAboutPanel(),
       ]),
     );
+    this.root.append(this.buildFlightDeck());
 
     this.crashLayer = div('crash-layer is-hidden');
     this.root.append(this.crashLayer);
@@ -260,7 +282,27 @@ export class Interface {
     return panel(t('panel.navigation'), body, true);
   }
 
-  private buildEnginePanel(): HTMLElement {
+  /**
+   * The manoeuvre planner.
+   *
+   * Rebuilt wholesale on each update rather than patched in place, because the
+   * *set* of controls changes with the state: with no node there is a row of
+   * solvers, and with one there are nudge controls, a resulting orbit, and a
+   * countdown. It carries no slider, so nothing can be interrupted mid-drag.
+   */
+  /**
+   * The bottom strip: attitude, throttle, cardinal headings, burn state.
+   *
+   * Everything here is touched *while flying*, which is why it is one strip
+   * rather than a panel in a column — a control reached for during a burn
+   * should not be behind a scroll position or a collapsed section.
+   */
+  private buildFlightDeck(): HTMLElement {
+    this.dial = new AttitudeDial(132, {
+      onAim: (yaw, pitch) => this.store.setAim(yaw, pitch),
+    });
+    this.dial.draw();
+
     const throttle = slider(
       t('engine.throttle'),
       0,
@@ -281,31 +323,49 @@ export class Interface {
       modes.append(node);
     }
 
+    this.aimBody = div('aim-readout');
     this.burnStatusBody = div('burn-status');
 
-    const body = div('panel-body', [
-      throttle,
-      modes,
-      this.value('propellant', t('engine.propellant')),
-      this.value('deltaV', t('engine.deltaV')),
-      this.value('circularise', t('engine.circularise', { cost: '' })),
-      element('hr', { class: 'rule' }),
-      toggle(t('engine.autopilot'), this.store.autopilot, (v) => {
-        this.store.autopilot = v;
-      }),
-      this.burnStatusBody,
+    return div('deck', [
+      div('deck-dial', [this.dial.element, text('deck-caption', t('engine.aimCaption'))]),
+      div('deck-controls', [
+        throttle,
+        modes,
+        div('deck-row', [
+          button(t('engine.cut'), () => this.store.setThrottle(0)),
+          button(t('engine.full'), () => this.store.setThrottle(1)),
+          toggle(t('engine.autopilot'), this.store.autopilot, (v) => {
+            this.store.autopilot = v;
+          }),
+        ]),
+      ]),
+      div('deck-status', [
+        this.aimBody,
+        this.value('propellant', t('engine.propellant')),
+        this.value('deltaV', t('engine.deltaV')),
+        this.value('circularise', t('engine.circulariseCost')),
+        this.burnStatusBody,
+      ]),
     ]);
-    return panel(t('panel.engine'), body, true);
   }
 
   /**
-   * The manoeuvre planner.
+   * The transfer calculator.
    *
-   * Rebuilt wholesale on each update rather than patched in place, because the
-   * *set* of controls changes with the state: with no node there is a row of
-   * solvers, and with one there are nudge controls, a resulting orbit, and a
-   * countdown. It carries no slider, so nothing can be interrupted mid-drag.
+   * Two endpoints and the answer. Either may be a moon, and the origin may also
+   * be the ship itself, because "from where I am to Titan" is the question
+   * actually asked — a planner that insisted on a circular starting orbit would
+   * be useless for most of a flight.
+   *
+   * The departure window is the reason this exists at all. The velocity change
+   * to reach Titan's *orbit* is a sum anyone can do; leaving at the moment that
+   * puts Titan at the meeting point is the part that takes an instrument.
    */
+  private buildTransferPanel(): HTMLElement {
+    this.transferBody = div('panel-body');
+    return panel(t('panel.transfer'), this.transferBody, true);
+  }
+
   private buildManoeuvrePanel(): HTMLElement {
     this.manoeuvreBody = div('panel-body');
     return panel(t('panel.manoeuvre'), this.manoeuvreBody, true);
@@ -344,6 +404,151 @@ export class Interface {
       );
     }
     return row;
+  }
+
+  /**
+   * Keep the dial showing where the engine is actually pointed.
+   *
+   * Under a cardinal mode the dial is a *readout* — it shows where "prograde"
+   * or "normal" currently is, rather than a heading the player set — so it is
+   * drawn dimmed. Free aim lights it up. Without that distinction the dial
+   * would look identical whether or not it was in control of anything.
+   */
+  private updateAim(): void {
+    const store = this.store;
+    const mode = store.module.mode;
+
+    if (mode === 'aimed') {
+      this.dial.set(store.module.aimYaw, store.module.aimPitch);
+      this.dial.cardinal = false;
+    } else {
+      const cardinalAngles: Record<string, [number, number]> = {
+        prograde: [0, 0],
+        retrograde: [Math.PI, 0],
+        'radial-out': [Math.PI / 2, 0],
+        'radial-in': [-Math.PI / 2, 0],
+        normal: [0, Math.PI / 2],
+        'anti-normal': [0, -Math.PI / 2],
+        inertial: [0, 0],
+      };
+      const [yaw, pitch] = cardinalAngles[mode] ?? [0, 0];
+      this.dial.set(yaw, pitch);
+      this.dial.cardinal = true;
+    }
+
+    this.dial.active = store.burning || store.module.throttle > 0;
+    this.dial.throttle = store.burning ? 1 : store.module.throttle;
+    this.dial.draw();
+
+    const { yaw, pitch } = this.dial.degrees();
+    this.aimBody.replaceChildren(
+      readout(t('engine.yaw'), `${formatNumber(yaw, 1)}°`),
+      readout(t('engine.pitch'), `${formatNumber(pitch, 1)}°`),
+    );
+  }
+
+  private updateTransfer(): void {
+    const store = this.store;
+    const body = this.transferBody;
+    body.replaceChildren();
+
+    const options = [
+      { value: 'module', label: t('transfer.module') },
+      ...store.moonList.map((moon) => ({ value: moon.id, label: moon.name })),
+    ];
+
+    body.append(
+      div('transfer-row', [
+        text('readout-label', t('transfer.from')),
+        select(store.transferFrom, options, (value) => {
+          store.transferFrom = value;
+          this.updateTransfer();
+        }),
+      ]),
+      div('transfer-row', [
+        text('readout-label', t('transfer.to')),
+        select(
+          store.transferTo,
+          options.filter((option) => option.value !== 'module'),
+          (value) => {
+            store.transferTo = value;
+            this.updateTransfer();
+          },
+        ),
+      ]),
+    );
+
+    store.updateTransfer();
+    const solution = store.transfer;
+    if (!solution) {
+      body.append(text('panel-help', t('transfer.unavailable')));
+      return;
+    }
+
+    body.append(element('hr', { class: 'rule' }));
+    body.append(
+      readout(t('transfer.departure'), `${formatNumber(solution.departureDeltaV, 0)} m/s`),
+      readout(t('transfer.arrival'), `${formatNumber(solution.arrivalDeltaV, 0)} m/s`),
+      readout(t('transfer.total'), `${formatNumber(solution.totalDeltaV, 0)} m/s`),
+    );
+
+    if (solution.planeChangeDeltaV > 1) {
+      body.append(
+        readout(
+          t('transfer.planeChange'),
+          `${formatNumber(solution.planeChangeDeltaV, 0)} m/s`,
+          'warn',
+        ),
+      );
+    }
+
+    body.append(readout(t('transfer.flightTime'), formatDuration(solution.flightTime)));
+
+    if (windowIsMeaningful(solution)) {
+      body.append(element('hr', { class: 'rule' }));
+      body.append(text('panel-help', t('transfer.windowHelp')));
+      body.append(
+        readout(
+          t('transfer.requiredPhase'),
+          `${formatNumber(solution.requiredPhase * RAD, 1)}°`,
+        ),
+        readout(
+          t('transfer.currentPhase'),
+          `${formatNumber(solution.currentPhase * RAD, 1)}°`,
+        ),
+        readout(
+          t('transfer.window'),
+          formatDuration(solution.timeToWindow),
+          solution.timeToWindow < 3_600 ? 'warn' : undefined,
+        ),
+        readout(t('transfer.synodic'), formatDuration(solution.synodicPeriod)),
+      );
+    }
+
+    // The departure burn is only the ship's to make when the ship is leaving.
+    if (store.transferFrom === 'module') {
+      body.append(
+        button(
+          t('transfer.planDeparture'),
+          () => {
+            const index = store.influenceIndex;
+            const base = emptyNode(
+              store.system.time + Math.max(60, solution.timeToWindow),
+              index,
+            );
+            store.setNode(
+              nodeFromAngles(
+                base,
+                Math.abs(solution.departureDeltaV),
+                solution.departureDeltaV < 0 ? Math.PI : 0,
+                0,
+              ),
+            );
+          },
+          { className: 'button button-primary' },
+        ),
+      );
+    }
   }
 
   private updateManoeuvre(): void {
@@ -595,7 +800,13 @@ export class Interface {
       toggle(t('overlay.mission'), overlays.mission, (v) => (overlays.mission = v)),
       element('hr', { class: 'rule' }),
       toggle(t('target.follow'), this.store.followModule, (v) => (this.store.followModule = v)),
+      toggle(t('camera.autoZoom'), this.store.autoZoom, (v) => {
+        this.store.autoZoom = v;
+      }),
       div('button-row', [
+        button(t('camera.zoomToShip'), () => this.store.zoomToShip(), {
+          className: 'button button-primary',
+        }),
         button(t('camera.faceSun'), () =>
           this.store.camera.faceSun(this.store.sun.direction),
         ),
@@ -731,6 +942,8 @@ export class Interface {
 
     this.updateNavigation();
     this.updateEngine();
+    this.updateAim();
+    this.updateTransfer();
     this.updateBurnStatus();
     this.updateManoeuvre();
     this.updateMission();

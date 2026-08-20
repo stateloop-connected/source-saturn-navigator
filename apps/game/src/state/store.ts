@@ -36,6 +36,11 @@ import {
 } from '@saturn/core/mission';
 import { osculatingElements } from '@saturn/core/elements';
 import {
+  orbitalAngle,
+  planTransfer,
+  type TransferSolution,
+} from '@saturn/core/transfer';
+import {
   SATURN_GM,
   SATURN_EQUATORIAL_RADIUS,
   circularSpeedInField,
@@ -45,7 +50,7 @@ import type { FieldGrid, FieldMode } from '@saturn/core/field';
 import type { Prediction } from '@saturn/core/predict';
 import { circularSpeed } from '@saturn/core/units';
 import { ZERO, add, length, sub, vec3, type Vec3 } from '@saturn/core/vec';
-import { Camera } from './camera.js';
+import { Camera, MAX_HALF_WIDTH, MIN_HALF_WIDTH } from './camera.js';
 
 export interface Overlays {
   orbits: boolean;
@@ -173,6 +178,23 @@ export class Store {
   /** Objectives ticked off so far. Latching — see `evaluateMission`. */
   readonly objectives = newMission();
   mission: MissionProgress | null = null;
+
+  /**
+   * Keep the zoom matched to where the module is.
+   *
+   * The view has to span seven decades over the course of a flight — from a
+   * low orbit 60 000 km up to a rendezvous 2 million km out, and down again to
+   * a few kilometres on final approach — and re-reaching for the wheel at every
+   * stage is most of the friction in flying this. On, the half-width tracks the
+   * module's distance from whatever body governs it, so the frame is always
+   * about the size of the situation.
+   */
+  autoZoom = true;
+
+  /** Endpoints of the transfer calculator: `module` or a moon id. */
+  transferFrom = 'module';
+  transferTo = 'titan';
+  transfer: TransferSolution | null = null;
 
   private readonly listeners = new Set<() => void>();
 
@@ -311,6 +333,111 @@ export class Store {
 
   setWarp(index: number): void {
     this.warpIndex = Math.min(WARP_STEPS.length - 1, Math.max(0, index));
+    this.notify();
+  }
+
+  /**
+   * Ease the zoom toward the size of the module's current situation.
+   *
+   * Eased rather than set, because the governing body changes abruptly — cross
+   * Titan's sphere of influence and the natural frame jumps from a million
+   * kilometres to fifty thousand. Snapping there is disorienting; a couple of
+   * seconds of travel reads as the camera following you in.
+   *
+   * `wallSeconds` rather than simulated time, so the easing runs at the same
+   * rate whatever the warp is doing.
+   */
+  updateAutoZoom(wallSeconds: number): void {
+    if (!this.autoZoom) return;
+
+    const governing = this.influenceIndex;
+    const distance = length(
+      sub(this.probe.position, this.system.positionOf(governing)),
+    );
+
+    // Show the module's whole altitude above its primary, with room around it.
+    const target = Math.min(
+      MAX_HALF_WIDTH,
+      Math.max(MIN_HALF_WIDTH, distance * 1.6),
+    );
+
+    // Exponential approach with a ~1.5 s time constant, framed in log space so
+    // that the rate feels the same at every scale.
+    const blend = 1 - Math.exp(-wallSeconds / 1.5);
+    const current = Math.log(this.camera.halfWidth);
+    this.camera.halfWidth = Math.exp(current + (Math.log(target) - current) * blend);
+  }
+
+  /** Snap the view to the module at close range. */
+  zoomToShip(): void {
+    this.followModule = true;
+    this.camera.centre = this.saturnCentred(this.probe.position);
+
+    const governing = this.influenceIndex;
+    const distance = length(
+      sub(this.probe.position, this.system.positionOf(governing)),
+    );
+    this.camera.halfWidth = Math.min(
+      MAX_HALF_WIDTH,
+      Math.max(MIN_HALF_WIDTH, distance * 1.6),
+    );
+    this.notify();
+  }
+
+  /**
+   * Where a transfer endpoint currently is, as a radius and an angle.
+   *
+   * `module` reads the ship's own osculating orbit, so "from here to Titan" is
+   * answerable without first parking in a circle. Everything else reads a
+   * moon's live position rather than its catalogue element, which is what makes
+   * the phase angle mean anything.
+   */
+  private transferEndpoint(id: string): { radius: number; angle: number; inclination: number } | null {
+    if (id === 'module') {
+      const orbit = this.orbitAboutInfluence();
+      const relative = this.saturnCentred(this.probe.position);
+      return {
+        radius: orbit.bound ? orbit.a : length(relative),
+        angle: orbitalAngle(relative.x, relative.y),
+        inclination: orbit.i,
+      };
+    }
+
+    const index = this.system.indexOf(id);
+    if (index < 0) return null;
+    const relative = this.system.saturnCentred(index);
+    const orbit = this.system.orbitOf(index);
+    return {
+      radius: orbit.a,
+      angle: orbitalAngle(relative.x, relative.y),
+      inclination: orbit.i,
+    };
+  }
+
+  /** Recompute the transfer solution for the chosen endpoints. */
+  updateTransfer(): void {
+    const from = this.transferEndpoint(this.transferFrom);
+    const to = this.transferEndpoint(this.transferTo);
+    if (!from || !to || from.radius <= 0 || to.radius <= 0) {
+      this.transfer = null;
+      return;
+    }
+
+    this.transfer = planTransfer({
+      fromRadius: from.radius,
+      toRadius: to.radius,
+      fromAngle: from.angle,
+      toAngle: to.angle,
+      fromInclination: from.inclination,
+      toInclination: to.inclination,
+      gm: SATURN_GM,
+    });
+  }
+
+  /** Point the engine by angles, in the orbital frame. Radians. */
+  setAim(yaw: number, pitch: number): void {
+    this.module = { ...this.module, aimYaw: yaw, aimPitch: pitch, mode: 'aimed' };
+    this.predictionStale = true;
     this.notify();
   }
 

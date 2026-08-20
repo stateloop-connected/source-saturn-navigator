@@ -54,12 +54,38 @@ directly in the way. And the destination is a *moving target* on a 33-day orbit,
 so arriving at the right radius is not arriving — which is the point at which
 the ghost moons in the prediction overlay stop being decoration.
 
-**Piloting.** Throttle and prograde/retrograde/radial/normal thrust for flying
-by hand, plus a manoeuvre planner for flying properly: pick a solution
-(circularise at either apsis, raise to Titan, raise to the mother ship) or add a
-blank node and trim prograde/normal/radial by hand. An autopilot flies the node
-when its window arrives, and the time warp holds itself down around a burn so it
-cannot be stepped over.
+**The cockpit.** Instruments frame the viewport on four sides and the middle
+stays clear, because the middle is what you are flying. Flight controls sit
+along the bottom where the hands go; the planning instruments, which are read
+rather than operated, run up the sides.
+
+**Pointing the engine.** Six cardinal modes for the common cases, and an
+attitude dial for everything between them. The dial draws the whole sphere of
+directions flat — **prograde at the centre, retrograde at the rim** — on an
+azimuthal equidistant projection, so distance from the centre *is* the angle
+away from prograde. Halfway out really is 90 degrees off, which means a burn
+placed by eye is placed correctly. Drag it to aim; under a cardinal mode it
+dims and becomes a readout of where that mode currently points.
+
+**Piloting.** Throttle and the modes for flying by hand, plus a manoeuvre
+planner for flying properly: pick a solution (circularise at either apsis,
+raise to Titan, raise to the mother ship) or add a blank node and trim
+prograde/normal/radial. An autopilot flies the node when its window arrives, and
+the time warp holds itself down around a burn so it cannot be stepped over.
+
+**Transfers between any two orbits.** Pick an origin — a moon, or the ship
+itself — and a destination, and get the two burns, the flight time, the plane
+change, and the part that actually matters: the **departure window**. Reaching
+Titan's orbit is a sum anyone can do; reaching *Titan* means leaving at the one
+moment per synodic period that puts it at the meeting point as you arrive, and
+that is what the instrument is for. Required phase angle, current phase angle,
+time to the window, and how often it comes round.
+
+**Auto-zoom.** The view spans seven decades over a flight — 60 000 km in low
+orbit, 2 million at the rendezvous, a few kilometres on final approach — and the
+zoom tracks the module's distance from whatever body governs it, eased over a
+second or two so that crossing into a sphere of influence does not snap. Touch
+the wheel and it stands down.
 
 Propellant is currently **unlimited**, while the module's properties are not yet
 configurable. The rocket equation is implemented in full and still runs; the
@@ -121,6 +147,7 @@ scale bar that snaps to round numbers.
 | `,` and `.` | Time warp |
 | Space | Pause |
 | `f` | Follow the module |
+| `v` | Frame the module |
 | `p` | Recompute the prediction |
 
 ---
@@ -177,7 +204,7 @@ apps/game       @saturn/game — canvas renderer, interface, worker.
 `@saturn/core` is consumed through its built output, the same way a separate
 repository would consume it, so every script here builds it first.
 
-The core carries 99 tests. The load-bearing one differentiates Saturn's
+The core carries 111 tests, with 10 more on the interface. The load-bearing one differentiates Saturn's
 gravitational potential numerically and compares it against the hand-derived
 harmonic terms in the force law — a dropped sign in any of J2, J4 or J6 would
 otherwise produce a field that still looks like gravity, still holds moons in

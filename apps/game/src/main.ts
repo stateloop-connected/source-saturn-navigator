@@ -77,6 +77,31 @@ function resize(): void {
  */
 const observer = new ResizeObserver(() => resize());
 observer.observe(document.body);
+
+/*
+ * Track how much of the canvas the cockpit is sitting on.
+ *
+ * Watched rather than measured once: the deck grows when the burn indicator
+ * appears and the columns change width with the viewport, so a figure taken at
+ * start-up is wrong by the first burn.
+ */
+function measureCockpit(): void {
+  const deck = ui.querySelector('.deck');
+  const topbar = ui.querySelector('.topbar');
+  const left = ui.querySelector('.column-left');
+  const right = ui.querySelector('.column-right');
+
+  store.camera.safeArea = {
+    top: topbar ? topbar.getBoundingClientRect().bottom : 0,
+    bottom: deck ? window.innerHeight - deck.getBoundingClientRect().top : 0,
+    left: left ? left.getBoundingClientRect().right : 0,
+    right: right ? window.innerWidth - right.getBoundingClientRect().left : 0,
+  };
+}
+
+const cockpitObserver = new ResizeObserver(() => measureCockpit());
+cockpitObserver.observe(ui);
+measureCockpit();
 window.addEventListener('resize', resize);
 resize();
 
@@ -132,6 +157,9 @@ canvas.addEventListener(
     // Normalise across the three deltaMode conventions, then move by a fixed
     // ratio per notch so zooming feels the same everywhere in the range.
     const notches = event.deltaMode === 1 ? event.deltaY / 3 : event.deltaY / 100;
+    // Touching the wheel is a statement that the player wants this zoom, so the
+    // automatic one stands down rather than pulling back a moment later.
+    store.autoZoom = false;
     store.camera.zoomBy(Math.pow(1.22, notches), event.clientX, event.clientY);
   },
   { passive: false },
@@ -199,6 +227,9 @@ window.addEventListener('keydown', (event) => {
     case 'f':
       store.followModule = !store.followModule;
       break;
+    case 'v':
+      store.zoomToShip();
+      break;
     case 'p':
       predictor.request(store);
       break;
@@ -231,6 +262,9 @@ function frame(now: number): void {
   if (store.followModule) {
     store.camera.centre = store.saturnCentred(store.probe.position);
   }
+  // Eased against wall time, so the zoom travels at the same rate whatever the
+  // warp is doing.
+  store.updateAutoZoom(wallDelta);
 
   drawScene(ctx, store, now);
 

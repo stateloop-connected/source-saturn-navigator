@@ -72,6 +72,18 @@ export class Camera {
   width = 1;
   height = 1;
 
+  /**
+   * The part of the canvas the cockpit does not cover, in pixels.
+   *
+   * The canvas is full-screen and the instruments sit over it, so anything the
+   * scene draws for the *reader* rather than for the world — the scale bar, and
+   * anything joining it later — has to be placed against this rather than
+   * against the window. Measured from the real elements in `main.ts`, because
+   * the panels change height as they are opened and a hard-coded figure would
+   * be wrong within one click.
+   */
+  safeArea = { top: 0, right: 0, bottom: 0, left: 0 };
+
   /** Pixels per kilometre. */
   get scale(): number {
     return this.width / (2 * this.halfWidth);

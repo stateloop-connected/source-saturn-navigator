@@ -20,6 +20,7 @@ import {
   ZERO,
   add,
   cross,
+  dot,
   length,
   normalize,
   scale,
@@ -46,7 +47,77 @@ export type ThrustMode =
   | 'radial-in'
   | 'normal'
   | 'anti-normal'
+  | 'aimed'
   | 'inertial';
+
+/**
+ * The orbital frame a thrust command is resolved in.
+ *
+ * Prograde along the velocity, normal along the angular momentum, radial
+ * outward and completing the right-handed set. Shared by the six cardinal
+ * thrust modes, by free aiming, and by manoeuvre nodes, so that "prograde"
+ * means one thing everywhere in the package.
+ *
+ * Returns null where the frame is undefined — a radial fall has no orbit
+ * normal — which callers must read as "do not thrust" rather than inventing a
+ * direction out of rounding error.
+ */
+export function orbitalBasis(
+  relativePosition: Vec3,
+  relativeVelocity: Vec3,
+): { prograde: Vec3; normal: Vec3; radial: Vec3 } | null {
+  const speed = length(relativeVelocity);
+  if (speed === 0 || length(relativePosition) === 0) return null;
+
+  const prograde = scale(relativeVelocity, 1 / speed);
+  const angularMomentum = cross(relativePosition, relativeVelocity);
+  const h = length(angularMomentum);
+  if (h === 0) return null;
+
+  const normal = scale(angularMomentum, 1 / h);
+  // Points away from the primary for a prograde orbit; checked by a test,
+  // because a radial-out burn that fires inward still looks like an orbit.
+  const radial = cross(prograde, normal);
+
+  return { prograde, normal, radial };
+}
+
+/**
+ * A thrust direction given as two angles in the orbital frame.
+ *
+ * `yaw` swings within the orbital plane, measured from prograde toward radial
+ * out; `pitch` lifts out of the plane toward the normal. Both in radians.
+ *
+ * This is what lets the engine be pointed anywhere rather than at one of six
+ * cardinal directions. The six remain because they are what a pilot wants
+ * ninety per cent of the time and hitting exactly 0.000 degrees on a dial is
+ * needless work — but a plane change at an arbitrary node, or a trim during a
+ * rendezvous, needs the whole sphere.
+ */
+export function directionFromAngles(
+  basis: { prograde: Vec3; normal: Vec3; radial: Vec3 },
+  yaw: number,
+  pitch: number,
+): Vec3 {
+  const inPlane = add(
+    scale(basis.prograde, Math.cos(yaw)),
+    scale(basis.radial, Math.sin(yaw)),
+  );
+  return add(scale(inPlane, Math.cos(pitch)), scale(basis.normal, Math.sin(pitch)));
+}
+
+/** The angles that would reproduce a direction in a given orbital frame. */
+export function anglesFromDirection(
+  basis: { prograde: Vec3; normal: Vec3; radial: Vec3 },
+  direction: Vec3,
+): { yaw: number; pitch: number } {
+  const unit = normalize(direction);
+  const alongNormal = Math.max(-1, Math.min(1, dot(unit, basis.normal)));
+  return {
+    pitch: Math.asin(alongNormal),
+    yaw: Math.atan2(dot(unit, basis.radial), dot(unit, basis.prograde)),
+  };
+}
 
 export interface ModuleSpec {
   /** Structure and payload, kg — everything that is not propellant. */
@@ -91,6 +162,10 @@ export interface ModuleState {
   mode: ThrustMode;
   /** Aim for `inertial` mode; ignored otherwise. Need not be normalised. */
   inertialAim: Vec3;
+  /** Aim for `aimed` mode: swing within the orbital plane, radians from prograde. */
+  aimYaw: number;
+  /** Aim for `aimed` mode: lift out of the plane toward the normal, radians. */
+  aimPitch: number;
   /** Index of the body the thrust modes are resolved against. */
   referenceIndex: number;
   /**
@@ -115,6 +190,8 @@ export const createModule = (
   throttle: 0,
   mode: 'prograde',
   inertialAim: vec3(1, 0, 0),
+  aimYaw: 0,
+  aimPitch: 0,
   referenceIndex: 0,
   infinitePropellant,
 });
@@ -147,25 +224,30 @@ export const massFlowRate = (state: ModuleState): number =>
  */
 export function thrustDirection(
   mode: ThrustMode,
-  inertialAim: Vec3,
+  state: Pick<ModuleState, 'inertialAim' | 'aimYaw' | 'aimPitch'>,
   relativePosition: Vec3,
   relativeVelocity: Vec3,
 ): Vec3 {
+  if (mode === 'inertial') return normalize(state.inertialAim);
+
+  const basis = orbitalBasis(relativePosition, relativeVelocity);
+  if (!basis) return ZERO;
+
   switch (mode) {
     case 'prograde':
-      return normalize(relativeVelocity);
+      return basis.prograde;
     case 'retrograde':
-      return scale(normalize(relativeVelocity), -1);
+      return scale(basis.prograde, -1);
     case 'radial-out':
-      return normalize(relativePosition);
+      return basis.radial;
     case 'radial-in':
-      return scale(normalize(relativePosition), -1);
+      return scale(basis.radial, -1);
     case 'normal':
-      return normalize(cross(relativePosition, relativeVelocity));
+      return basis.normal;
     case 'anti-normal':
-      return scale(normalize(cross(relativePosition, relativeVelocity)), -1);
-    case 'inertial':
-      return normalize(inertialAim);
+      return scale(basis.normal, -1);
+    case 'aimed':
+      return directionFromAngles(basis, state.aimYaw, state.aimPitch);
   }
 }
 
@@ -187,7 +269,7 @@ export function thrustAcceleration(
 
   const direction = thrustDirection(
     state.mode,
-    state.inertialAim,
+    state,
     relativePosition,
     relativeVelocity,
   );

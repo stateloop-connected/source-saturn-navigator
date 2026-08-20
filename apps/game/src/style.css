@@ -47,16 +47,28 @@ body {
   cursor: crosshair;
 }
 
+/*
+ * The cockpit.
+ *
+ * Four bands of instruments around a clear middle: status across the top,
+ * navigation and targets down the left, planning down the right, and the flight
+ * controls along the bottom where the hands go. The centre is never covered,
+ * because the centre is the thing being flown.
+ *
+ * The columns are fixed-width and the middle takes what is left, so the
+ * viewport is the same size whatever the panels are doing — a scene that
+ * reflowed every time a panel opened would make the scale bar lie.
+ */
 #ui {
   position: fixed;
   inset: 0;
   /* The frame does not intercept the pointer; only the controls in it do. */
   pointer-events: none;
   display: grid;
-  grid-template-columns: 268px 1fr 304px;
-  grid-template-rows: auto 1fr;
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: 264px 1fr 300px;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+  padding: 10px;
 }
 
 #ui > * {
@@ -114,18 +126,19 @@ body {
   gap: 10px;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Leave the canvas scale bar visible in the corner. */
-  padding-bottom: 34px;
+  padding-bottom: 2px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 
 .column-left {
   grid-column: 1;
+  grid-row: 2;
 }
 
 .column-right {
   grid-column: 3;
+  grid-row: 2;
 }
 
 /* ------------------------------------------------------------------- panels */
@@ -460,18 +473,6 @@ body {
 
 /* ------------------------------------------------------------- narrow views */
 
-@media (max-width: 1100px) {
-  #ui {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-  }
-
-  .column-left,
-  .column-right {
-    grid-column: 1;
-    max-height: 34vh;
-  }
-}
 
 /* ------------------------------------------------- pilot and manoeuvre UI */
 
@@ -592,4 +593,124 @@ body {
 .panel-help.is-success {
   color: #5ef2d0;
   font-weight: 600;
+}
+
+
+/* ============================================================= flight deck */
+
+/*
+ * The bottom band.
+ *
+ * Spans all three columns and sits under the viewport, so the attitude dial is
+ * directly below the trajectory it is aiming into. Laid out as dial / controls
+ * / status, with the controls taking the slack — the dial and the readouts are
+ * both fixed-size things and only the throttle wants to stretch.
+ */
+.deck {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: auto minmax(240px, 1fr) minmax(190px, auto);
+  gap: 16px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+}
+
+.deck-dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.attitude {
+  /* Dragging it must not select the caption underneath. */
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.deck-caption {
+  max-width: 190px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--dim);
+}
+
+.deck-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.deck-controls .mode-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.deck-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deck-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.aim-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ============================================================== transfers */
+
+.transfer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transfer-row .readout-label {
+  flex: 0 0 42px;
+}
+
+/* --------------------------------------------------------- narrow views */
+
+@media (max-width: 1180px) {
+  #ui {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .column-left,
+  .column-right {
+    grid-column: 1;
+    max-height: 26vh;
+  }
+
+  .column-left { grid-row: 2; }
+  .column-right { grid-row: 3; }
+  .deck { grid-row: 4; }
+
+  .deck {
+    grid-template-columns: auto 1fr;
+  }
+
+  .deck-status {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 }

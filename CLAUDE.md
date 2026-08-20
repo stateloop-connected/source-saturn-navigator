@@ -20,7 +20,7 @@ are flying in.
 |---|---|
 | Stack | **TypeScript + Vite, vanilla DOM**, no UI framework, no runtime dependencies |
 | Scene rendering | **Canvas 2D.** Not CSS (the sibling Orrery's choice) — this scene has thousands of path segments per frame |
-| Interface rendering | **DOM**, layered over the canvas as two edge columns |
+| Interface rendering | **DOM**, as a cockpit framing the viewport on four sides |
 | Units | **km and seconds**, GM in km³/s². Never AU, never days |
 | Frame | **Barycentric**, Saturn as body 0; Saturn's equator is the xy-plane |
 | Integrator | **Yoshida 4th-order symplectic**, 60 s step, fixed |
@@ -28,6 +28,7 @@ are flying in.
 | Moon phases | **Synthetic and documented as such**, except trojans and Janus/Epimetheus |
 | Prediction | **Fork the simulation and fly it.** No patched conics, no Keplerian shortcut |
 | Manoeuvres | **Impulsive to plan, finite to fly.** One node at a time |
+| Attitude | **Azimuthal equidistant dial**, prograde centred — not a globe |
 | Propellant | **Unlimited for now**, via a flag; the rocket equation stays implemented |
 | Camera | **Orthographic**, tilt over the full 0–180° so both ring faces are reachable |
 | Default locale | **Czech**, English via toggle |
@@ -63,6 +64,7 @@ and running only the app's dev server will use a stale `dist`.
 | `manoeuvre` | Nodes, solvers, and the autopilot that flies them |
 | `predict` | Fork-and-fly prediction, ghosts, approaches, impacts |
 | `mission` | The mother ship, the objectives, and where the module starts |
+| `transfer` | Hohmann figures and, more to the point, departure windows |
 | `field` | Field sampling in absolute / tidal / co-rotating modes |
 | `illumination` | Phases, Saturn's oblate shadow, ring lighting |
 
@@ -100,12 +102,22 @@ step can be duty-cycled rather than over-run.
 constantly, and relative to a body the module is not bound to every solver
 correctly returns nothing — which reads as a dead button.
 
+**The cockpit never covers the middle.** Panels frame the viewport and the
+canvas draws its reader-facing marks against `camera.safeArea`, which is
+measured from the real elements rather than hard-coded — the deck grows when the
+burn indicator appears, and a fixed inset is wrong within one burn.
+
+**The dial and the engine share one angle convention.** `fromDial` feeds
+`setAim` directly, so a drift between the two would leave free aim working and
+simply pointing somewhere other than the dial showed. `attitude.test.ts` checks
+the dial against `thrustDirection` at all four cardinal points.
+
 **The drawn-radius floor is the only visual lie.** Moons are drawn no smaller
 than 1.6 px. Nothing the physics reads may ever use that number.
 
 ## 5. Testing
 
-99 tests in core. The suite is not decorative — several caught real errors
+121 tests: 111 in core, 10 on the interface. The suite is not decorative — several caught real errors
 during the build, and the shape of each is worth keeping.
 
 - **`saturn.test.ts` is load-bearing.** It differentiates the potential
@@ -139,6 +151,8 @@ translated.
 
 - No attitude dynamics; thrust takes effect instantly.
 - One manoeuvre node at a time; no queue, and therefore no multi-burn plan.
+- Transfers assume circular coplanar orbits; they are a plan, and the
+  predictor is the authority. Titan's e is 0.029 and Iapetus is inclined 15°.
 - Propellant is unlimited pending configurable module properties.
 - Resonances other than the anchored two are not set up (see §4, phases).
 - The 2019-and-later Norse discoveries are not in the catalogue.

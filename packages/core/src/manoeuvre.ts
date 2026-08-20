@@ -32,11 +32,10 @@
  */
 
 import { osculatingElements, type OrbitSummary } from './elements.js';
-import { totalMass, type ModuleState } from './module.js';
+import { orbitalBasis, totalMass, type ModuleState } from './module.js';
 import {
   ZERO,
   add,
-  cross,
   length,
   normalize,
   scale,
@@ -94,32 +93,56 @@ export function nodeDirection(
   relativePosition: Vec3,
   relativeVelocity: Vec3,
 ): Vec3 {
-  const speed = length(relativeVelocity);
-  const distance = length(relativePosition);
-  if (speed === 0 || distance === 0) return ZERO;
-
-  const prograde = scale(relativeVelocity, 1 / speed);
-  const angularMomentum = cross(relativePosition, relativeVelocity);
-  const h = length(angularMomentum);
-  if (h === 0) return ZERO;
-
-  const normal = scale(angularMomentum, 1 / h);
-  /*
-   * Completes the right-handed set, and points *outward*.
-   *
-   * Worth checking rather than assuming: for a prograde equatorial orbit at
-   * (R, 0, 0) the velocity is +y and the angular momentum +z, so this cross
-   * product is +x — away from the primary. A test pins it, because the sign
-   * was wrong here once and a radial-out burn that fires inward looks like a
-   * plausible orbit rather than like a bug.
-   */
-  const radial = cross(prograde, normal);
+  const basis = orbitalBasis(relativePosition, relativeVelocity);
+  if (!basis) return ZERO;
 
   const direction = add(
-    add(scale(prograde, node.prograde), scale(normal, node.normal)),
-    scale(radial, node.radial),
+    add(scale(basis.prograde, node.prograde), scale(basis.normal, node.normal)),
+    scale(basis.radial, node.radial),
   );
   return length(direction) === 0 ? ZERO : normalize(direction);
+}
+
+/**
+ * A node's components re-expressed as a magnitude and two angles.
+ *
+ * The same burn, said the other way round. Components suit trimming — "another
+ * ten metres per second prograde" — while magnitude-and-heading suits aiming,
+ * and a plane change is far easier to think about as 30 degrees out of the
+ * plane than as a pair of numbers whose ratio has to come out right.
+ *
+ * The interface offers both and converts between them here, so neither is the
+ * stored form and there is nothing to keep in step.
+ */
+export function nodeToAngles(node: ManoeuvreNode): {
+  magnitude: number;
+  yaw: number;
+  pitch: number;
+} {
+  const magnitude = nodeMagnitude(node);
+  if (magnitude === 0) return { magnitude: 0, yaw: 0, pitch: 0 };
+
+  return {
+    magnitude,
+    pitch: Math.asin(Math.max(-1, Math.min(1, node.normal / magnitude))),
+    yaw: Math.atan2(node.radial, node.prograde),
+  };
+}
+
+/** The inverse: components from a magnitude and two angles. */
+export function nodeFromAngles(
+  base: ManoeuvreNode,
+  magnitude: number,
+  yaw: number,
+  pitch: number,
+): ManoeuvreNode {
+  const inPlane = magnitude * Math.cos(pitch);
+  return {
+    ...base,
+    prograde: inPlane * Math.cos(yaw),
+    radial: inPlane * Math.sin(yaw),
+    normal: magnitude * Math.sin(pitch),
+  };
 }
 
 /**

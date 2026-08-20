@@ -342,8 +342,8 @@ export function drawScaleBar(ctx: CanvasRenderingContext2D, camera: Camera): voi
   const km = step * magnitude;
   const widthPx = km * camera.scale;
 
-  const x = 20;
-  const y = camera.height - 26;
+  const x = camera.safeArea.left + 16;
+  const y = camera.height - camera.safeArea.bottom - 14;
 
   ctx.save();
   ctx.strokeStyle = THEME.ruleStrong;

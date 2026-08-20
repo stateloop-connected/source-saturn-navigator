@@ -206,7 +206,36 @@ rather than inside it.
 
 ---
 
-## 5. Prediction
+## 5. Transfers
+
+The transfer calculator assumes **circular, coplanar orbits**. Neither is quite
+true here — Titan's eccentricity is 0.029, Hyperion's 0.123, and Iapetus is
+inclined 15.5° — so its figures are a *plan*, good to a few per cent, and the
+trajectory predictor is what tells the truth afterwards.
+
+That division is deliberate. A planner accurate enough to be the final word
+would have to integrate, which takes a second in a worker; a control that
+answers in a second is not a control. So the sums are instant and approximate,
+and the moment a burn is actually planned the predictor flies it properly.
+
+The plane change is reported separately rather than folded into the total,
+because it is the one term a player can often avoid entirely by burning at a
+node — and because it is costed at the slow end of the transfer, which is where
+a real mission would take it. Titan to Iapetus is 616 m/s of plane change on top
+of the Hohmann burns.
+
+The departure window is exact for the assumptions: the required phase angle is
+π − n₂t, and a test advances both bodies by the quoted wait and checks the phase
+lands where it was supposed to, to within 10⁻⁶ rad.
+
+Windows are suppressed where they would be meaningless — two orbits within 2% of
+each other have a synodic period running to years and a phase condition met
+almost continuously, so reporting one for Telesto and Tethys, which share an
+orbit exactly, would be noise.
+
+---
+
+## 6. Prediction
 
 The predicted path is produced by forking the entire simulation and running it
 forward with the same force law and the same integrator. It is not an estimate
@@ -223,7 +252,7 @@ good to a few kilometres over a week.
 
 ---
 
-## 6. Rendering
+## 7. Rendering
 
 One deliberate visual lie, isolated as tightly as possible: **moons are drawn no
 smaller than 1.6 pixels.** Daphnis is 4 km across on a view 800 000 km wide,
