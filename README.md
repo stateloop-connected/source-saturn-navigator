@@ -97,7 +97,7 @@ near Titan". The radii are humbling: Titan's is 43 000 km, comfortable; Mimas's
 is 249 km against a body of radius 198, a shell fifty kilometres thick with the
 ground underneath.
 
-**Navigation.** The readout gives altitude, speed, and the osculating orbit
+**Navigation.** The readout gives altitude and speed, plus the osculating orbit
 about whichever body you have selected — which is the point, because "prograde"
 near Titan means something quite different depending on whether the frame is
 Titan's or Saturn's.

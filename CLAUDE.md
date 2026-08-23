@@ -61,7 +61,7 @@ and running only the app's dev server will use a stale `dist`.
 | `forces` | **The force law, and the only place it is written down** |
 | `system` | `SaturnSystem`: state, seeding, stepping, forking |
 | `module` | The spacecraft: thrust modes, the rocket equation |
-| `manoeuvre` | Nodes, solvers, and the autopilot that flies them |
+| `manoeuvre` | Nodes and solvers, plus the autopilot that flies them |
 | `predict` | Fork-and-fly prediction, ghosts, approaches, impacts |
 | `mission` | The mother ship, the objectives, and where the module starts |
 | `transfer` | Hohmann figures and, more to the point, departure windows |

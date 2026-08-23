@@ -55,7 +55,7 @@ flags which is which (`gmMeasured`), and the interface shows it.
 
 ### What is right about the orbits
 
-Semi-major axis, eccentricity and inclination, and therefore:
+The size and shape of every orbit, and its tilt. From those:
 
 - periods, to the precision of the published values — checked in the tests
   against Pan, Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Hyperion, Iapetus,
