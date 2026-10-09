@@ -1,0 +1,14 @@
+{
+  "build_script": "npm run build:core && npm run build --workspace @saturn/game --",
+  "gameplay_or_asset_changes": false,
+  "lockfile": "package-lock.json",
+  "mode": "native_source_build",
+  "repository": "richardLipka/saturn_navigator",
+  "schema_version": 1,
+  "source_changes": [
+    ".packaging/plan.json"
+  ],
+  "status": "ready",
+  "upstream_code_executed_locally": false,
+  "upstream_sha": "a7e44c4b6a4e8436274f46a342c5ffa51625cdd9"
+}
